@@ -1,0 +1,6 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="64" fill="#10B981"/>
+  <circle cx="256" cy="200" r="80" fill="white"/>
+  <path d="M180 320 L332 320 C340 320 348 328 348 336 L348 360 C348 368 340 376 332 376 L180 376 C172 376 164 368 164 360 L164 336 C164 328 172 320 180 320 Z" fill="white"/>
+  <text x="256" y="450" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="48" font-weight="bold">SENU</text>
+</svg>
