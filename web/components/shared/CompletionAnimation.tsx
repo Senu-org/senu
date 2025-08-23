@@ -10,6 +10,8 @@ interface CompletionAnimationProps {
   title?: string;
   subtitle?: string;
   redirectTo?: string;
+  isLoading?: boolean;
+  loadingMessage?: string;
 }
 
 export function CompletionAnimation({ 
@@ -17,7 +19,9 @@ export function CompletionAnimation({
   onComplete, 
   title = "¡Registro Completado!",
   subtitle = "Tu método de pago ha sido configurado exitosamente",
-  redirectTo
+  redirectTo,
+  isLoading = false,
+  loadingMessage = "Procesando..."
 }: CompletionAnimationProps) {
   const [animationStep, setAnimationStep] = useState(0);
   const [mounted, setMounted] = useState(false);
@@ -32,17 +36,24 @@ export function CompletionAnimation({
       // Reset animation step when showing
       setAnimationStep(0);
       
-      // Animation sequence
+      // If loading, don't start animation yet
+      if (isLoading) {
+        return;
+      }
+      
+      // Animation sequence (only when not loading)
       const timer1 = setTimeout(() => setAnimationStep(1), 100);
       const timer2 = setTimeout(() => setAnimationStep(2), 600);
       const timer3 = setTimeout(() => setAnimationStep(3), 1100);
       const timer4 = setTimeout(() => {
         setAnimationStep(4);
-        onComplete?.();
         
-        // Handle redirect if specified
-        if (redirectTo) {
-          setTimeout(() => {
+        // Wait for animation to fully complete before calling onComplete and redirecting
+        setTimeout(() => {
+          onComplete?.();
+          
+          // Handle redirect if specified - only after animation is complete
+          if (redirectTo) {
             // Check if it's an external URL (starts with http/https)
             if (redirectTo.startsWith('http://') || redirectTo.startsWith('https://')) {
               // For external URLs, use window.location.href
@@ -51,9 +62,9 @@ export function CompletionAnimation({
               // For internal routes, use router.push
               router.push(redirectTo);
             }
-          }, 500); // Small delay after completion callback
-        }
-      }, 2500);
+          }
+        }, 1500); // Wait for animation to fully complete before redirect
+      }, 2500); // Complete animation sequence timing
 
       return () => {
         clearTimeout(timer1);
@@ -62,7 +73,7 @@ export function CompletionAnimation({
         clearTimeout(timer4);
       };
     }
-  }, [isVisible, onComplete, mounted]);
+  }, [isVisible, onComplete, mounted, redirectTo, router, isLoading]);
 
   // Don't render anything on the server or if not mounted
   if (!mounted || !isVisible) return null;
@@ -70,6 +81,29 @@ export function CompletionAnimation({
   const modalContent = (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-3xl p-8 mx-4 max-w-sm w-full text-center">
+        
+        {/* Loading State */}
+        {isLoading ? (
+          <>
+            {/* Loading spinner */}
+            <div className="relative mx-auto mb-6">
+              <div className="w-20 h-20 mx-auto rounded-full border-4 border-purple-200 flex items-center justify-center">
+                <svg className="animate-spin w-10 h-10 text-purple-500" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            </div>
+            
+            {/* Loading text */}
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-gray-900">Procesando...</h3>
+              <p className="text-gray-600">{loadingMessage}</p>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Success Animation - Only shown when not loading */}
         {/* Animated checkmark circle */}
         <div className="relative mx-auto mb-6">
           <div 
@@ -148,6 +182,8 @@ export function CompletionAnimation({
             <span className="text-xs font-medium text-blue-700">Seguro</span>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

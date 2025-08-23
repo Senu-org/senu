@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CreditCardForm, BankAccountForm, CryptoForm } from '../shared/forms';
+import { CreditCardForm, CryptoForm } from '../shared/forms';
 import { CompletionAnimation } from '../shared';
 import { config } from '@/lib/config/env';
 
@@ -20,28 +20,66 @@ const paymentMethods: PaymentMethod[] = [
     available: true,
   },
   {
-    id: 'bank',
-    name: 'Transferencia Bancaria',
-    icon: '🏦',
-    available: true,
-  },
-  {
     id: 'crypto',
     name: 'Criptomonedas',
     icon: '₿',
-    available: true
+    available: false
   }
 ];
 
-export function FundingMethods() {
+interface FundingMethodsProps {
+  phoneNumber?: string | null;
+}
+
+export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
   const [expandedMethod, setExpandedMethod] = useState<string | null>(null);
   const [showCompletion, setShowCompletion] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [mounted, setMounted] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  
+  // Wallet creation states
+  const [walletCreationStatus, setWalletCreationStatus] = useState<'creating' | 'success' | 'error' | null>(null);
+  const [walletData, setWalletData] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Background wallet creation on component mount
+  useEffect(() => {
+    if (phoneNumber && mounted) {
+      createWalletInBackground();
+    }
+  }, [phoneNumber, mounted]);
+
+  const createWalletInBackground = async () => {
+    if (!phoneNumber) return;
+    
+    try {
+      setWalletCreationStatus('creating');
+      
+      // TODO: Replace with actual wallet creation API
+      // Example: const wallet = await walletService.createWallet({ phoneNumber });
+      
+      // Simulate wallet creation (remove when implementing real API)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      const mockWalletData = {
+        walletId: `wallet_${Date.now()}`,
+        phoneNumber,
+        createdAt: new Date().toISOString()
+      };
+      
+      setWalletData(mockWalletData);
+      setWalletCreationStatus('success');
+      console.log('Wallet ready:', mockWalletData);
+      
+    } catch (error) {
+      console.error('Background wallet creation failed:', error);
+      setWalletCreationStatus('error');
+    }
+  };
 
   const handleMethodClick = (methodId: string) => {
     const method = paymentMethods.find(m => m.id === methodId);
@@ -50,11 +88,62 @@ export function FundingMethods() {
     }
   };
 
-  const handlePaymentSubmit = (methodId: string) => {
+  const handlePaymentSubmit = async (methodId: string, paymentData: any) => {
     const method = paymentMethods.find(m => m.id === methodId);
-    if (method) {
+    if (!method) return;
+
+    try {
       setSelectedMethod(method.name);
+      setIsProcessingPayment(true);
+      
+      // Show completion modal immediately (in loading state if wallet not ready)
       setShowCompletion(true);
+      
+      // Check if wallet creation is still in progress
+      if (walletCreationStatus === 'creating') {
+        // Modal is already showing in loading state
+        // Wait for wallet creation to complete
+        while (walletCreationStatus === 'creating') {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+      
+      // Check if wallet creation failed
+      if (walletCreationStatus === 'error') {
+        throw new Error('Wallet creation failed. Please try again.');
+      }
+      
+      // Wallet should be ready now, create user with wallet + payment info
+      if (walletCreationStatus === 'success' && walletData) {
+        // TODO: Replace with actual user creation API call
+        // Example: await userService.createUser({
+        //   walletData,
+        //   paymentMethod: { methodId, ...paymentData },
+        //   phoneNumber
+        // });
+        
+        // Simulate user creation (remove when implementing real API)
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        console.log('User created with:', {
+          wallet: walletData,
+          paymentMethod: { methodId, ...paymentData },
+          phoneNumber
+        });
+        
+        // Stop loading state - this will trigger the success animation
+        setIsProcessingPayment(false);
+      } else {
+        throw new Error('Wallet not ready. Please try again.');
+      }
+      
+    } catch (error) {
+      console.error('Failed to process payment:', error);
+      // TODO: Show error message to user
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Error: ${errorMessage}`);
+      setShowCompletion(false);
+      setIsProcessingPayment(false);
     }
   };
 
@@ -67,11 +156,21 @@ export function FundingMethods() {
   const renderExpandedContent = (methodId: string) => {
     switch (methodId) {
       case 'card':
-        return <CreditCardForm mode="funding" onSubmit={() => handlePaymentSubmit(methodId)} />;
-      case 'bank':
-        return <BankAccountForm mode="funding" onSubmit={() => handlePaymentSubmit(methodId)} />;
+        return (
+          <CreditCardForm 
+            mode="funding" 
+            onSubmit={(paymentData) => handlePaymentSubmit(methodId, paymentData)}
+            isLoading={isProcessingPayment}
+          />
+        );
       case 'crypto':
-        return <CryptoForm mode="funding" onSubmit={() => handlePaymentSubmit(methodId)} />;
+        return (
+          <CryptoForm 
+            mode="funding" 
+            onSubmit={(paymentData) => handlePaymentSubmit(methodId, paymentData)}
+            isLoading={isProcessingPayment}
+          />
+        );
       default:
         return null;
     }
@@ -181,6 +280,8 @@ export function FundingMethods() {
         title="¡Método Configurado!"
         subtitle={`${selectedMethod} ha sido configurado exitosamente. Ahora puedes enviar tu remesa por WhatsApp`}
         redirectTo={config.whatsapp.getWhatsAppUrl("Hola, ya configuré mi método de pago y quiero enviar una remesa")}
+        isLoading={isProcessingPayment || walletCreationStatus === 'creating'}
+        loadingMessage="Creando tu perfil de usuario..."
       />
     </>
   );

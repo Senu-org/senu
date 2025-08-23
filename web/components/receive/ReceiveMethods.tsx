@@ -23,7 +23,7 @@ const receiveMethods: ReceiveMethod[] = [
     id: 'crypto',
     name: 'Wallet de Criptomonedas',
     icon: '₿',
-    available: true,
+    available: false,
     description: 'Recibe Bitcoin, USDC y Ethereum en tu wallet'
   }
 ];
@@ -40,7 +40,10 @@ export function ReceiveMethods() {
   const safeExpandedMethod = mounted ? expandedMethod : null;
 
   const handleMethodClick = (methodId: string) => {
-    setExpandedMethod(expandedMethod === methodId ? null : methodId);
+    const method = receiveMethods.find(m => m.id === methodId);
+    if (method?.available) {
+      setExpandedMethod(expandedMethod === methodId ? null : methodId);
+    }
   };
 
   const BankTransferInfo = () => (
@@ -81,13 +84,6 @@ export function ReceiveMethods() {
               CÉDULA
             </label>
             <p className="text-sm font-semibold text-gray-800">1-2345-6789</p>
-          </div>
-          
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
-              TIPO DE CUENTA
-            </label>
-            <p className="text-sm font-semibold text-gray-800">Cuenta Corriente Colones</p>
           </div>
         </div>
       </div>
@@ -176,21 +172,30 @@ Tipo: Cuenta Corriente Colones
                   <p className="text-sm text-gray-500 truncate">
                     {method.description}
                   </p>
+                  {!method.available && (
+                    <p className="text-xs text-gray-500 mt-1">Próximamente disponible</p>
+                  )}
                 </div>
 
                 {/* Expand/Collapse Indicator */}
                 <div className="flex-shrink-0 ml-3">
-                  <svg 
-                    className={`
-                      w-5 h-5 text-gray-400 transition-transform duration-200
-                      ${safeExpandedMethod === method.id ? 'rotate-180' : ''}
-                    `} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  {method.available ? (
+                    <svg 
+                      className={`
+                        w-5 h-5 text-gray-400 transition-transform duration-200
+                        ${safeExpandedMethod === method.id ? 'rotate-180' : ''}
+                      `} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  ) : (
+                    <div className="w-5 h-5 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    </div>
+                  )}
                 </div>
               </div>
 
