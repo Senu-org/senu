@@ -3,17 +3,35 @@
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "dependsOn": ["^build", "type-check"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": ["NODE_ENV", "NEXT_PUBLIC_*"]
     },
     "dev": {
       "cache": false,
+      "persistent": true,
+      "env": ["NODE_ENV", "NEXT_PUBLIC_*"]
+    },
+    "start": {
+      "dependsOn": ["build"],
+      "cache": false,
       "persistent": true
     },
-    "lint": {},
-    "test": {},
+    "lint": {
+      "dependsOn": ["^lint"],
+      "outputs": []
+    },
+    "type-check": {
+      "dependsOn": ["^type-check"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^test", "type-check"],
+      "outputs": ["coverage/**"]
+    },
     "clean": {
-      "cache": false
+      "cache": false,
+      "outputs": []
     }
   }
 }
