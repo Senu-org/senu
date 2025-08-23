@@ -1,4 +1,3 @@
-import { FundingHeader } from './FundingHeader';
 import { FundingHero } from './FundingHero';
 import { FundingMethods } from './FundingMethods';
 
