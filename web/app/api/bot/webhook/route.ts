@@ -98,31 +98,81 @@ export async function POST(request: NextRequest) {
     const isRegistered = await AuthService.isUserRegistered(cleanFrom);
     const existingUser = await AuthService.getUserByPhone(cleanFrom);
     
+    // Check if context has timed out (30 minutes)
+    const contextTimeout = 30 * 60 * 1000; // 30 minutes in milliseconds
+    if (context && context.lastActivity && (Date.now() - context.lastActivity) > contextTimeout) {
+      console.log(`Context timed out for ${cleanFrom}, resetting...`);
+      context = null;
+    }
+    
     if (!context) {
       context = conversationStateMachine.getInitialContext(cleanFrom);
-      await conversationContextService.setContext(context);
       
       if (isRegistered && existingUser) {
-        // Existing user - send welcome message with menu
-        await sendWelcomeMessageWithMenu(cleanFrom, existingUser.name);
+        // Existing user - set state to showing menu and send welcome message
         context.state = ConversationState.ShowingMenu;
+        context.lastActivity = Date.now();
+        await conversationContextService.setContext(context);
+        
+        try {
+          await sendWelcomeMessageWithMenu(cleanFrom, existingUser.name);
+        } catch (error) {
+          console.error('Failed to send welcome message with menu:', error);
+          // Don't return error, just log it and continue
+        }
       } else {
         // New user - start registration flow
+        context.state = ConversationState.AwaitingRegistrationName;
+        context.lastActivity = Date.now();
+        await conversationContextService.setContext(context);
+        
         try {
           await botService.sendMessage(cleanFrom, "Welcome to the Remittance Bot! What is your name?");
         } catch (error) {
           console.error('Failed to send welcome message:', error);
-          return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
+          // Don't return error, just log it and continue
         }
-        context.state = ConversationState.AwaitingRegistrationName;
       }
-      await conversationContextService.setContext(context);
       return NextResponse.json({ success: true });
     }
 
     const intent = new IntentParser().parse(message);
+    
+    // Update last activity timestamp
+    context.lastActivity = Date.now();
+    
+    // Handle /start command - reset context and show menu for existing users
+    if (intent === '/start') {
+      if (isRegistered && existingUser) {
+        // Reset context and show menu for existing users
+        context = conversationStateMachine.getInitialContext(cleanFrom);
+        context.state = ConversationState.ShowingMenu;
+        context.lastActivity = Date.now();
+        await conversationContextService.setContext(context);
+        
+        try {
+          await sendWelcomeMessageWithMenu(cleanFrom, existingUser.name);
+        } catch (error) {
+          console.error('Failed to send welcome message with menu:', error);
+        }
+        return NextResponse.json({ success: true });
+      } else {
+        // For new users, start registration
+        context = conversationStateMachine.getInitialContext(cleanFrom);
+        context.state = ConversationState.AwaitingRegistrationName;
+        context.lastActivity = Date.now();
+        await conversationContextService.setContext(context);
+        
+        try {
+          await botService.sendMessage(cleanFrom, "Welcome to the Remittance Bot! What is your name?");
+        } catch (error) {
+          console.error('Failed to send welcome message:', error);
+        }
+        return NextResponse.json({ success: true });
+      }
+    }
+    
     const newState = conversationStateMachine.transition(context.state, intent);
-
     context.state = newState;
 
     switch (newState) {
@@ -221,7 +271,7 @@ export async function POST(request: NextRequest) {
           // User typed /menu command
           await sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
         } else {
-          await sendMessage(cleanFrom, "Please select a valid option from the menu.");
+          await sendMessage(cleanFrom, "Please select a valid option from the menu or type /start to reset the conversation.");
           await sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
         }
         break;
@@ -232,30 +282,44 @@ export async function POST(request: NextRequest) {
           // For now, let's assume a fixed fee or calculate it here
           const fee = amount * 0.01; // 1% fee
           const totalToSend = amount + fee;
-          await sendMessage(cleanFrom, `You want to send ${amount}. A fee of ${fee} will be applied. Total: ${totalToSend}. Reply /confirm to proceed or /cancel to abort.`);
+          const confirmMessage = `You want to send $${amount}. A fee of $${fee.toFixed(2)} will be applied. Total: $${totalToSend.toFixed(2)}.`;
+          const confirmOptions = ['Confirm Transaction', 'Cancel Transaction'];
+          await botService.sendMessageWithButtons(cleanFrom, confirmMessage, confirmOptions);
           context.state = ConversationState.ConfirmingTransaction;
         } else {
           await sendMessage(cleanFrom, "Please enter a valid amount.");
         }
         break;
       case ConversationState.ConfirmingTransaction:
-        if (intent === '/confirm') {
-          // Here, generate the Mini App link and send it to the user
+        if (intent === 'menu_selection_1') {
+          // User confirmed the transaction
           const miniAppLink = `https://miniapp.example.com/payment?amount=${context.amount}&from=${cleanFrom}`;
           await sendMessage(cleanFrom, `Please complete your payment using this link: ${miniAppLink}`);
           // Reset context after sending the link for payment
           await conversationContextService.deleteContext(cleanFrom); 
           context.state = ConversationState.Idle; 
-        } else if (intent === '/cancel') {
+        } else if (intent === 'menu_selection_2') {
+          // User cancelled the transaction
           await sendMessage(cleanFrom, "Transaction cancelled.");
           await conversationContextService.deleteContext(cleanFrom); // Clear context
           context.state = ConversationState.Idle; // Reset state
         } else {
-          await sendMessage(cleanFrom, "Please reply /confirm or /cancel.");
+          await sendMessage(cleanFrom, "Please select a valid option from the buttons above.");
+          const confirmMessage = `You want to send $${context.amount}. A fee of $${(context.amount * 0.01).toFixed(2)} will be applied. Total: $${(context.amount * 1.01).toFixed(2)}.`;
+          const confirmOptions = ['Confirm Transaction', 'Cancel Transaction'];
+          await botService.sendMessageWithButtons(cleanFrom, confirmMessage, confirmOptions);
         }
         break;
       case ConversationState.Idle:
-        if (intent === '/send') {
+        if (intent === '/start') {
+          if (isRegistered && existingUser) {
+            await sendWelcomeMessageWithMenu(cleanFrom, existingUser.name);
+            context.state = ConversationState.ShowingMenu;
+          } else {
+            await sendMessage(cleanFrom, "Welcome to the Remittance Bot! What is your name?");
+            context.state = ConversationState.AwaitingRegistrationName;
+          }
+        } else if (intent === '/send') {
           await sendMessage(cleanFrom, "How much would you like to send?");
           context.state = ConversationState.AwaitingAmount;
         } else if (intent === '/status') {
@@ -266,9 +330,9 @@ export async function POST(request: NextRequest) {
           await sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
           context.state = ConversationState.ShowingMenu;
         } else if (intent === '/help') {
-          await sendMessage(cleanFrom, "Here are the available commands:\n/send - Send money\n/status - Check transaction status\n/balance - Check your balance\n/menu - Show main menu\n/help - Show this help message");
+          await sendMessage(cleanFrom, "Here are the available commands:\n/start - Reset conversation and show menu\n/send - Send money\n/status - Check transaction status\n/balance - Check your balance\n/menu - Show main menu\n/help - Show this help message");
         } else {
-          await sendMessage(cleanFrom, "I don't understand that command. Try /menu to see available options or /help for commands.");
+          await sendMessage(cleanFrom, "I don't understand that command. Try /start to reset the conversation, /menu to see available options, or /help for commands.");
         }
         break;
       // Other states will be handled here later

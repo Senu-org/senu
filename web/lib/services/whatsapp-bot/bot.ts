@@ -22,26 +22,40 @@ export class BotService {
         body: message,
       });
       console.log(`Message sent to ${to}: ${message}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error sending message to ${to}:`, error);
+      
+      // Handle rate limiting gracefully
+      if (error.code === 63038) {
+        console.log(`Rate limit reached for ${to}. Message not sent.`);
+        return; // Don't throw error, just log and continue
+      }
+      
       throw error;
     }
   }
 
   async sendMessageWithButtons(to: string, message: string, buttons: string[]) {
     try {
-      // Create button text
-      const buttonText = buttons.map((button, index) => `${index + 1}. ${button}`).join('\n');
-      const fullMessage = `${message}\n\n${buttonText}`;
+      // Create formatted button text with clear indicators
+      const buttonText = buttons.map((button, index) => `🔘 ${button}`).join('\n');
+      const fullMessage = `${message}\n\n${buttonText}\n\nPlease reply with the number (1-${buttons.length}) or type the option name.`;
       
       await this.client.messages.create({
         from: 'whatsapp:+14155238886',
         to: `whatsapp:${to}`,
         body: fullMessage,
       });
-      console.log(`Message with buttons sent to ${to}: ${fullMessage}`);
-    } catch (error) {
-      console.error(`Error sending message with buttons to ${to}:`, error);
+      console.log(`Message with formatted buttons sent to ${to}: ${fullMessage}`);
+    } catch (error: any) {
+      console.error(`Error sending message with formatted buttons to ${to}:`, error);
+      
+      // Handle rate limiting gracefully
+      if (error.code === 63038) {
+        console.log(`Rate limit reached for ${to}. Message with buttons not sent.`);
+        return; // Don't throw error, just log and continue
+      }
+      
       throw error;
     }
   }
@@ -66,7 +80,9 @@ export class IntentParser {
   parse(message: string): string {
     const lowerCaseMessage = message.toLowerCase().trim();
 
-    if (lowerCaseMessage.startsWith('/send')) {
+    if (lowerCaseMessage.startsWith('/start')) {
+      return '/start';
+    } else if (lowerCaseMessage.startsWith('/send')) {
       return '/send';
     } else if (lowerCaseMessage.startsWith('/status')) {
       return '/status';
