@@ -20,7 +20,7 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./apps/web/*"],
+      "@/*": ["./web/*"],
       "@/shared/*": ["./packages/shared/*"],
       "@/types/*": ["./packages/types/*"]
     }

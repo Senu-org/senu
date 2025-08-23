@@ -2,17 +2,13 @@
   "name": "senu",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "start": "turbo run start",
-    "lint": "turbo run lint",
-    "test": "turbo run test",
-    "clean": "turbo run clean",
+    "dev": "cd web && npm run dev",
+    "build": "cd web && npm run build",
+    "start": "cd web && npm run start",
+    "lint": "cd web && npm run lint",
+    "test": "cd web && npm run test",
+    "clean": "cd web && npm run clean",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
@@ -25,5 +21,5 @@
     "turbo": "^2.0.0",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@8.0.0"
+  "packageManager": "npm@10.0.0"
 }
