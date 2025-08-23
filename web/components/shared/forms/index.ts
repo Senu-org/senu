@@ -1,3 +1,3 @@
 export { CreditCardForm } from './CreditCardForm';
-export { BankTransferForm } from './BankTransferForm';
+export { BankAccountForm } from './BankAccountForm';
 export { CryptoForm } from './CryptoForm';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CreditCardForm, BankTransferForm, CryptoForm } from './forms';
+import { CreditCardForm, BankAccountForm, CryptoForm } from '../shared/forms';
 
 interface PaymentMethod {
   id: string;
@@ -44,11 +44,11 @@ export function FundingMethods() {
   const renderExpandedContent = (methodId: string) => {
     switch (methodId) {
       case 'card':
-        return <CreditCardForm />;
+        return <CreditCardForm mode="funding" />;
       case 'bank':
-        return <BankTransferForm />;
+        return <BankAccountForm mode="funding" />;
       case 'crypto':
-        return <CryptoForm />;
+        return <CryptoForm mode="funding" />;
       default:
         return null;
     }

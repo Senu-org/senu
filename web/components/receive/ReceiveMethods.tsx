@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { BankAccountForm, CryptoForm } from '../shared/forms';
 
 interface ReceiveMethod {
   id: string;
@@ -13,10 +14,17 @@ interface ReceiveMethod {
 const receiveMethods: ReceiveMethod[] = [
   {
     id: 'bank',
-    name: 'Transferencia Bancaria',
+    name: 'Cuenta Bancaria',
     icon: '🏦',
     available: true,
     description: 'Recibe transferencias directamente a tu cuenta bancaria'
+  },
+  {
+    id: 'crypto',
+    name: 'Wallet de Criptomonedas',
+    icon: '₿',
+    available: true,
+    description: 'Recibe Bitcoin, USDC y Ethereum en tu wallet'
   }
 ];
 
@@ -105,7 +113,9 @@ Tipo: Cuenta Corriente Colones
   const renderExpandedContent = (methodId: string) => {
     switch (methodId) {
       case 'bank':
-        return <BankTransferInfo />;
+        return <BankAccountForm mode="receiving" />;
+      case 'crypto':
+        return <CryptoForm mode="receiving" />;
       default:
         return null;
     }
