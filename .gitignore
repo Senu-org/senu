@@ -55,6 +55,7 @@ pids/
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov
+.nyc_output/
 
 # Temporary folders
 tmp/
@@ -92,11 +93,6 @@ temp/
 # TypeScript
 *.tsbuildinfo
 
-# Testing
-coverage/
-*.lcov
-.nyc_output/
-
 # Storybook
 storybook-static/
 
@@ -108,6 +104,3 @@ storybook-static/
 
 # Netlify
 .netlify
-
-# Local development
-.env*.local

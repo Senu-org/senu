@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
+  // Set the workspace root to silence the lockfile warning
+  outputFileTracingRoot: require('path').join(__dirname, '../'),
+  
   // PWA configuration
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -15,6 +15,7 @@ const nextConfig = {
     }
     return config;
   },
+  
   // Enable HTTPS for development (required for WhatsApp integration)
   async rewrites() {
     return [
