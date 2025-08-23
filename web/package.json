@@ -12,8 +12,8 @@
     "clean": "rm -rf .next .turbo node_modules/.cache"
   },
   "dependencies": {
-    "@getpara/server-sdk": "^1.18.1",
-    "@getpara/viem-v2-integration": "^2.0.0-alpha.50",
+    "@getpara/react-sdk": "^1.18.1",
+    "@getpara/server-sdk": "2.0.0-alpha.50",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-toast": "^1.1.5",
@@ -25,6 +25,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "dotenv": "^17.2.1",
+    "ethers": "^6.15.0",
     "lucide-react": "^0.263.1",
     "next": "15.5.0",
     "react": "^18",
