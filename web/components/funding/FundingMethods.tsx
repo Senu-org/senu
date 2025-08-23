@@ -86,7 +86,7 @@ export function FundingMethods() {
         <div className="bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100">
         
         {/* iOS-style header */}
-        <div className="px-4 py-4 border-b border-gray-100">
+        <div className="px-4 py-4 border-b border-gray-100" style={{ backgroundColor: 'rgb(243 232 255 / var(--tw-bg-opacity, 1))' }}>
           <div className="text-center">
             <h3 className="text-lg font-semibold text-gray-900">Métodos de Financiamiento</h3>
             <p className="text-sm text-gray-500 mt-1">Selecciona tu método preferido</p>
