@@ -1,20 +1,49 @@
-import fs from "fs/promises"; import path from "path"; 
+import fs from "fs/promises";
+import path from "path"; 
 import { IWalletRepository } from "../interfaces/IWalletRepository";
 
 class JSONRepository implements IWalletRepository{    
-        private readonly filePath: string;      
+        private readonly filePath: string;     
+
         constructor(filePath: string = './data/wallets.json'){
             this.filePath = path.resolve(filePath);     
         }      
         
-        async save(walletData: any): Promise<void> {     
+        private async ensureFileExists(): Promise<void> {
+            const dir = path.dirname(this.filePath);
+
+            try {
+                // Crear carpeta si no existe
+                await fs.mkdir(dir, { recursive: true });
+
+                // Crear archivo si no existe
+                try {
+                    await fs.access(this.filePath);
+                } catch {
+                    await fs.writeFile(this.filePath, JSON.stringify([]));
+                }
+            } catch (error) {
+                console.error('Error ensuring wallets file exists:', error);
+                throw error;
+            }
+        }
+
+        async save(walletData: any): Promise<void> {   
+
+            await this.ensureFileExists();
             const wallets = await this.readWallets();          
             
-                // Add new wallet      
-                wallets.push({ ...walletData});                  
-                await this.writeWallets(wallets);     
+            // Add new wallet      
+            wallets.push({ ...walletData});                  
+            await this.writeWallets(wallets);     
         }   
 
+        async getUserShareByPhoneNumber(phoneNumber: number): Promise<string | null> {
+            const wallets = await this.readWallets();
+            const wallet = wallets.find((w: any) => w.phoneNumber === phoneNumber);
+            return wallet ? wallet.encryptedShare : null;
+        }
+        
         private async writeWallets(wallets: any[]): Promise<void> {
                 try {        
                     await fs.writeFile(this.filePath, JSON.stringify(wallets, null, 2));        
@@ -25,6 +54,7 @@ class JSONRepository implements IWalletRepository{
             }      
             
         private async readWallets(): Promise<any[]> {
+            await this.ensureFileExists();
             try {      
                     const data = await fs.readFile(this.filePath, 'utf-8');    
                     const wallets = JSON.parse(data);          
@@ -35,3 +65,5 @@ class JSONRepository implements IWalletRepository{
                 }   
         } 
 }  
+
+export default JSONRepository;
