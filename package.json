@@ -2,24 +2,30 @@
   "name": "senu",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "web"
+  ],
   "scripts": {
-    "dev": "cd web && npm run dev",
-    "build": "cd web && npm run build",
-    "start": "cd web && npm run start",
-    "lint": "cd web && npm run lint",
-    "test": "cd web && npm run test",
-    "clean": "cd web && npm run clean",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "web:dev": "npm run dev --workspace=web",
+    "web:build": "npm run build --workspace=web",
+    "web:start": "npm run start --workspace=web",
+    "type-check": "turbo run type-check",
+    "install:all": "npm install && npm run install --workspaces"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "eslint": "^8",
-    "eslint-config-next": "15.5.0",
     "prettier": "^3.0.0",
     "turbo": "^2.0.0",
     "typescript": "^5"
   },
-  "packageManager": "npm@10.0.0"
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
