@@ -1,4 +1,4 @@
-import { Para } from "@getpara/server-sdk";
+import { Para, Environment, WalletType } from "@getpara/server-sdk";
 import dotenv from "dotenv";
 import { IWalletRepository } from "../interfaces/IWalletRepository";
 import crypto from "crypto";
@@ -11,7 +11,7 @@ class WalletService {
   private encryptionKey: string;
 
   constructor(walletRepository: IWalletRepository) {
-    this.paraServer = new Para(process.env.PARA_API_KEY || '');
+    this.paraServer = new Para(Environment.SANDBOX, process.env.PARA_API_KEY || '');
     this.walletRepository = walletRepository;
     this.encryptionKey = process.env.ENCRYPTION_KEY || '';
   }
@@ -20,7 +20,8 @@ class WalletService {
     try {
       
       const hasWallet = await this.paraServer.hasPregenWallet({
-        pregenId: { phone: `+${number}` },
+        pregenIdentifier: `+${number}`,
+        pregenIdentifierType: 'PHONE',
       });
       
       if(hasWallet){
@@ -28,8 +29,9 @@ class WalletService {
       }
 
       const generatedWallet = await this.paraServer.createPregenWallet({
-        type: 'EVM',
-        pregenId: { phone: `+${number}` },
+        type: WalletType.EVM,
+        pregenIdentifier: `+${number}`,
+        pregenIdentifierType: 'PHONE',
       });
 
       const userShare: string = this.paraServer.getUserShare() || '';
