@@ -1,33 +1,33 @@
 export enum TransactionStatus {
-  INITIATED = 'initiated',
-  PAYMENT_PENDING = 'payment_pending',
-  PAYMENT_CONFIRMED = 'payment_confirmed',
-  BLOCKCHAIN_PENDING = 'blockchain_pending',
-  BLOCKCHAIN_CONFIRMED = 'blockchain_confirmed',
-  WITHDRAWAL_PENDING = 'withdrawal_pending',
-  COMPLETED = 'completed',
-  FAILED = 'failed'
+  INITIATED = "initiated",
+  PAYMENT_PENDING = "payment_pending",
+  PAYMENT_CONFIRMED = "payment_confirmed",
+  BLOCKCHAIN_PENDING = "blockchain_pending",
+  BLOCKCHAIN_CONFIRMED = "blockchain_confirmed",
+  WITHDRAWAL_PENDING = "withdrawal_pending",
+  COMPLETED = "completed",
+  FAILED = "failed",
 }
 
 export enum ErrorCodes {
   // User errors (4xx)
-  INVALID_PHONE = 'INVALID_PHONE',
-  INSUFFICIENT_BALANCE = 'INSUFFICIENT_BALANCE',
-  TRANSACTION_LIMIT_EXCEEDED = 'TRANSACTION_LIMIT_EXCEEDED',
-  
+  INVALID_PHONE = "INVALID_PHONE",
+  INSUFFICIENT_BALANCE = "INSUFFICIENT_BALANCE",
+  TRANSACTION_LIMIT_EXCEEDED = "TRANSACTION_LIMIT_EXCEEDED",
+
   // System errors (5xx)
-  ONRAMP_SERVICE_UNAVAILABLE = 'ONRAMP_SERVICE_UNAVAILABLE',
-  BLOCKCHAIN_TIMEOUT = 'BLOCKCHAIN_TIMEOUT',
-  WALLET_CREATION_FAILED = 'WALLET_CREATION_FAILED'
+  ONRAMP_SERVICE_UNAVAILABLE = "ONRAMP_SERVICE_UNAVAILABLE",
+  BLOCKCHAIN_TIMEOUT = "BLOCKCHAIN_TIMEOUT",
+  WALLET_CREATION_FAILED = "WALLET_CREATION_FAILED",
 }
 
 export interface User {
   id: string;
   phone: string; // WhatsApp number
   name: string;
-  country: 'CR' | 'NI';
+  country: "CR" | "NI";
   wallet_address: string;
-  kyc_status: 'pending' | 'verified' | 'rejected';
+  kyc_status: "pending" | "verified" | "rejected";
   created_at: Date;
   updated_at: Date;
 }
@@ -75,7 +75,7 @@ export interface CustodialWallet {
 export interface RegisterUserRequest {
   phone: string;
   name: string;
-  country: 'CR' | 'NI';
+  country: "CR" | "NI";
 }
 
 export interface RegisterUserResponse {
@@ -141,7 +141,7 @@ export interface TransferBetweenWalletsResponse {
 // WhatsApp Bot Types
 export interface BotConversationContext {
   user_phone: string;
-  current_flow: 'registration' | 'send_money' | 'check_status' | 'idle';
+  current_flow: "registration" | "send_money" | "check_status" | "idle";
   step: string;
   data: Record<string, any>;
   last_activity: Date;
@@ -179,6 +179,30 @@ export interface ApiResponse<T> {
   error?: ApiError;
 }
 
+// JWT Payload Type
+export interface JWTPayload {
+  phone: string;
+  iat: number;
+  exp: number;
+}
+
+// Authentication Types
+export interface AuthenticatedRequest extends Request {
+  user?: {
+    phone: string;
+    user: User;
+  };
+}
+
+export interface LoginRequest {
+  phone: string;
+}
+
+export interface LoginResponse {
+  user: User;
+  token: string;
+}
+
 // MetaMask / Web3 Types
 declare global {
   interface Window {
@@ -187,7 +211,10 @@ declare global {
       isMetaMask?: boolean;
       selectedAddress?: string;
       on?: (event: string, callback: (...args: any[]) => void) => void;
-      removeListener?: (event: string, callback: (...args: any[]) => void) => void;
+      removeListener?: (
+        event: string,
+        callback: (...args: any[]) => void
+      ) => void;
     };
   }
 }

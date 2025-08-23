@@ -2,14 +2,14 @@
 
 [api]
 enabled = true
-port = 54321
+port = 54331
 schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
-port = 54322
-shadow_port = 54320
+port = 54332
+shadow_port = 54330
 major_version = 15
 
 [realtime]
@@ -17,14 +17,14 @@ enabled = false
 
 [studio]
 enabled = true
-port = 54323
-api_url = "http://localhost:54321"
+port = 54333
+api_url = "http://localhost:54331"
 
 [inbucket]
 enabled = true
-port = 54324
-smtp_port = 54325
-pop3_port = 54326
+port = 54334
+smtp_port = 54335
+pop3_port = 54336
 
 [storage]
 enabled = true
@@ -36,25 +36,14 @@ site_url = "http://localhost:3000"
 additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
 enable_signup = true
-enable_confirmations = false
 
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false
 
 [auth.sms]
 enable_signup = true
-enable_confirmations = false
 template = "Your code is {{ .Code }}"
-
-# Phone Auth (for WhatsApp numbers)
-[auth.phone]
-enable_signup = true
-enable_confirmations = false
-
-[edge_functions]
-enabled = false
 
 [analytics]
 enabled = false
