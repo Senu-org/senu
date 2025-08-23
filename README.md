@@ -153,7 +153,6 @@ Your webhook endpoint (`/api/bot/webhook`) automatically validates Twilio reques
 
 ## API Endpoints
 
-- `POST /api/bot/test` - Send test WhatsApp messages
 - `POST /api/bot/webhook` - WhatsApp webhook endpoint
 - `POST /api/transactions/send` - Send remittances
 - `GET /api/wallets/[phone]/balance` - Get wallet balance

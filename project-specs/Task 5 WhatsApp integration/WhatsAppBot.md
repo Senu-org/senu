@@ -52,7 +52,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
 
 - **Acceptance Criteria:**
   - The webhook at `/api/bot/webhook` successfully receives and logs incoming messages from Twilio.
-  - The `BotService` can send a test message to a specified WhatsApp number.
+  - The `BotService` can send messages to WhatsApp numbers.
 - **Requirements:** 1.1, 4.1, 5.1
 
 #### 5.2 Implement Intent Parser and Context Management

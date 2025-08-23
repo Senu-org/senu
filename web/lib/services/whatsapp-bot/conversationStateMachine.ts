@@ -3,7 +3,8 @@ export enum ConversationState {
   AwaitingAmount = 'awaiting_amount',
   ConfirmingTransaction = 'confirming_transaction',
   AwaitingRegistrationName = 'awaiting_registration_name',
-  AwaitingRegistrationCountry = 'awaiting_registration_country',
+  AwaitingCountryConfirmation = 'awaiting_country_confirmation',
+  AwaitingCountrySelection = 'awaiting_country_selection',
   ShowingMenu = 'showing_menu',
 }
 
@@ -44,14 +45,21 @@ export class ConversationStateMachine {
         return ConversationState.ConfirmingTransaction; // Stay until confirmed or cancelled
       case ConversationState.AwaitingRegistrationName:
         if (intent === 'name_received') {
-          return ConversationState.AwaitingRegistrationCountry;
+          return ConversationState.AwaitingCountryConfirmation; // Ask for country confirmation
         }
         return ConversationState.AwaitingRegistrationName;
-      case ConversationState.AwaitingRegistrationCountry:
-        if (intent === 'country_received') {
-          return ConversationState.Idle; // Registration complete
+      case ConversationState.AwaitingCountryConfirmation:
+        if (intent === 'yes' || intent === 'confirm') {
+          return ConversationState.ShowingMenu; // Country confirmed, registration complete
+        } else if (intent === 'no' || intent === 'change') {
+          return ConversationState.AwaitingCountrySelection; // User wants to change country
         }
-        return ConversationState.AwaitingRegistrationCountry;
+        return ConversationState.AwaitingCountryConfirmation;
+      case ConversationState.AwaitingCountrySelection:
+        if (intent === 'country_selected') {
+          return ConversationState.ShowingMenu; // Country selected, registration complete
+        }
+        return ConversationState.AwaitingCountrySelection;
       case ConversationState.ShowingMenu:
         if (intent.startsWith('menu_selection_')) {
           // Handle menu selection and return to idle or appropriate state
