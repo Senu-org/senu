@@ -7,11 +7,14 @@ const vapidKeys = {
   privateKey: process.env.VAPID_PRIVATE_KEY || "",
 };
 
-webpush.setVapidDetails(
-  'mailto:notifications@senu.app',
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
-);
+// Only set VAPID details if keys are provided
+if (vapidKeys.publicKey && vapidKeys.privateKey) {
+  webpush.setVapidDetails(
+    'mailto:notifications@senu.app',
+    vapidKeys.publicKey,
+    vapidKeys.privateKey
+  );
+}
 
 interface NotificationPayload {
   title: string;
@@ -42,6 +45,14 @@ const subscriptions = new Map<string, any>();
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if VAPID keys are configured
+    if (!vapidKeys.publicKey || !vapidKeys.privateKey) {
+      return NextResponse.json(
+        { error: 'VAPID keys not configured. Please set NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables.' },
+        { status: 500 }
+      );
+    }
+
     const { type, payload, targetEndpoint }: PushRequest = await request.json();
 
     if (!payload.title || !payload.body) {
@@ -142,6 +153,14 @@ export async function POST(request: NextRequest) {
 
 // Endpoint para testing
 export async function GET() {
+  // Check if VAPID keys are configured
+  if (!vapidKeys.publicKey || !vapidKeys.privateKey) {
+    return NextResponse.json(
+      { error: 'VAPID keys not configured. Please set NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables.' },
+      { status: 500 }
+    );
+  }
+
   const testPayload: PushRequest = {
     type: 'test',
     payload: {
