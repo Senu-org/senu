@@ -1,0 +1,197 @@
+# Plan de Implementación
+
+- [ ] 1. Configurar estructura del proyecto y dependencias principales
+  - Crear monorepo Next.js con estructura de microservicios
+  - Configurar TypeScript, ESLint, Prettier para desarrollo
+  - Instalar dependencias: wagmi, reown, tailwindcss, shadcn/ui, supabase
+  - Configurar variables de entorno para desarrollo y testing
+  - *Requisitos: Todos (base técnica)*
+
+- [ ] 2. Implementar modelos de datos y esquemas de base de datos
+  - [ ] 2.1 Crear tipos TypeScript para entidades principales
+    - Definir interfaces User, Transaction, CustodialWallet
+    - Crear enums para TransactionStatus y ErrorCodes
+    - Implementar tipos de requests/responses de API
+    - *Requisitos: 1.3, 7.1, 7.3*
+  - [ ] 2.2 Configurar esquemas Supabase y migraciones
+    - Crear tablas users, transactions, custodial_wallets
+    - Implementar triggers para updated_at automático
+    - Configurar Row Level Security policies básicas
+    - *Requisitos: 1.3, 7.1, 9.3*
+
+- [ ] 3. Desarrollar servicios de autenticación y gestión de usuarios
+  - [ ] 3.1 Implementar Auth Service
+    - Crear endpoints de registro por número telefónico
+    - Implementar validación de números WhatsApp válidos
+    - Configurar JWT token generation y validation
+    - *Requisitos: 1.1, 1.2, 1.4*
+  - [ ] 3.2 Crear middleware de autenticación
+    - Implementar JWT verification middleware
+    - Configurar rate limiting por número telefónico
+    - Añadir logging de requests autenticados
+    - *Requisitos: 9.1, 10.4*
+
+- [ ] 4. Implementar Wallet Service y integración blockchain
+  - [ ] 4.1 Configurar conexión con Monad testnet
+    - Integrar wagmi con configuración Monad
+    - Crear provider configuration para testnet
+    - Implementar gas price estimation y management
+    - *Requisitos: 7.1, 7.2*
+  - [ ] 4.2 Implementar gestión de wallets custodiales
+    - Crear función para generar wallets con Para Protocol
+    - Implementar almacenamiento seguro de claves privadas
+    - Desarrollar funciones de transfer entre wallets custodiales
+    - Escribir tests unitarios para operaciones de wallet
+    - *Requisitos: 7.1, 7.2, 7.3*
+  - [ ] 4.3 Crear endpoints de Wallet Service API
+    - Implementar POST /wallets/create con validaciones
+    - Crear GET /wallets/{phone}/balance con cache
+    - Desarrollar POST /wallets/transfer con retry logic
+    - *Requisitos: 7.1, 7.2*
+
+- [ ] 5. Desarrollar WhatsApp Bot Service
+  - [ ] 5.1 Configurar integración Twilio WhatsApp API
+    - Implementar webhook receiver para mensajes entrantes
+    - Crear cliente Twilio para envío de mensajes
+    - Configurar templates de mensajes pre-aprobados
+    - *Requisitos: 1.1, 4.1, 5.1*
+  - [ ] 5.2 Implementar parser de intents y gestión de contexto
+    - Crear sistema de reconocimiento de comandos (/enviar, /estado)
+    - Implementar máquina de estados para conversaciones
+    - Desarrollar persistencia de contexto de sesión
+    - Escribir tests para flows conversacionales
+    - *Requisitos: 1.1, 1.4, 10.4*
+  - [ ] 5.3 Crear flujos de conversación principales
+    - Implementar flujo de registro inicial de usuarios
+    - Desarrollar flujo de iniciación de transacciones
+    - Crear respuestas automáticas para estados de error
+    - *Requisitos: 1.1, 1.2, 2.1, 10.1*
+
+- [ ] 6. Implementar Transaction Service y orquestación
+  - [ ] 6.1 Crear API endpoints para transacciones
+    - Implementar POST /transactions/send con validaciones
+    - Desarrollar GET /transactions/{id}/status con polling
+    - Crear POST /transactions/{id}/retry para fallos
+    - *Requisitos: 2.1, 2.4, 10.2, 10.3*
+  - [ ] 6.2 Implementar máquina de estados de transacciones
+    - Crear TransactionStatus enum y transitions
+    - Desarrollar funciones para cambios de estado seguros
+    - Implementar persistence de estados en Supabase
+    - Escribir tests para todas las transiciones válidas
+    - *Requisitos: 2.4, 4.1, 5.1, 10.1, 10.2*
+  - [ ] 6.3 Desarrollar orquestador de flujo completo
+    - Crear función principal processTransaction end-to-end
+    - Implementar coordinación entre wallet, on-ramp, off-ramp
+    - Desarrollar rollback logic para transacciones fallidas
+    - *Requisitos: 2.1, 3.1, 6.1, 7.2*
+
+- [ ] 7. Integrar servicios de on-ramp para pagos
+  - [ ] 7.1 Implementar integración con proveedor on-ramp
+    - Crear cliente API para proveedor de on-ramp seleccionado
+    - Implementar webhook handler para confirmaciones de pago
+    - Desarrollar mapping entre estados internos y externos
+    - *Requisitos: 3.1, 3.2, 8.1*
+  - [ ] 7.2 Crear mock on-ramp para fase de prueba técnica
+    - Implementar simulador de pago exitoso con delays realistas
+    - Crear endpoints mock que replican API real
+    - Desarrollar UI de admin para controlar respuestas mock
+    - *Requisitos: Requisito 8 (fase de prueba)*
+
+- [ ] 8. Integrar servicios de off-ramp para retiros
+  - [ ] 8.1 Implementar integración SINPE para Nicaragua
+    - Crear cliente API para validación de cuentas SINPE
+    - Implementar procesamiento de transferencias bancarias
+    - Desarrollar webhook handler para confirmaciones de retiro
+    - *Requisitos: 6.2, 6.4, 6.5, 8.2*
+  - [ ] 8.2 Crear fallback con WalletConnect para pruebas
+    - Integrar Reown AppKit en Mini App
+    - Implementar conexión con wallets externas
+    - Desarrollar flujo de retiro directo a wallet conectada
+    - *Requisitos: Requisito 8 (fase de prueba)*
+
+- [ ] 9. Desarrollar Mini App PWA
+  - [ ] 9.1 Configurar estructura base de la PWA
+    - Crear aplicación Next.js con app directory
+    - Configurar Tailwind CSS y shadcn/ui components
+    - Implementar PWA manifest y service worker
+    - Configurar responsive design mobile-first
+    - *Requisitos: 2.4, 3.1, 6.1*
+  - [ ] 9.2 Implementar PaymentFlow component
+    - Crear UI para selección de métodos de pago
+    - Desarrollar integración con on-ramp providers
+    - Implementar validaciones de monto y límites
+    - Crear loading states y error handling
+    - *Requisitos: 2.1, 2.2, 2.4, 3.1, 3.2*
+  - [ ] 9.3 Desarrollar WithdrawalFlow component
+    - Crear formularios para datos bancarios/SINPE
+    - Implementar validación de cuentas en tiempo real
+    - Desarrollar confirmación de retiro con preview
+    - Crear progress tracking para off-ramp
+    - *Requisitos: 6.1, 6.2, 6.4, 6.5, 6.6*
+  - [ ] 9.4 Implementar WalletConnect integration
+    - Integrar Reown para conexión de wallets
+    - Crear UI para selección de wallets soportadas
+    - Implementar retiro directo a wallets conectadas
+    - *Requisitos: Requisito 8 (fase de prueba)*
+
+- [ ] 10. Implementar sistema de notificaciones
+  - [ ] 10.1 Crear Notification Service
+    - Desarrollar templates para diferentes tipos de notificación
+    - Implementar cola de notificaciones con retry logic
+    - Crear sistema de tracking de entrega de mensajes
+    - *Requisitos: 4.1, 5.1, 5.3, 6.6*
+  - [ ] 10.2 Implementar notificaciones automáticas por estado
+    - Crear triggers para cambios de estado de transacciones
+    - Desarrollar notificaciones push para Mini App
+    - Implementar notificaciones WhatsApp para eventos críticos
+    - *Requisitos: 4.1, 4.2, 5.1, 10.2*
+
+- [ ] 11. Desarrollar sistema de validaciones y compliance
+  - [ ] 11.1 Implementar validaciones de límites transaccionales
+    - Crear reglas de límites diarios/mensuales por usuario
+    - Implementar validación de montos mínimos/máximos
+    - Desarrollar sistema de alertas para actividad sospechosa
+    - *Requisitos: 9.1, 9.2, 9.4*
+  - [ ] 11.2 Crear sistema básico de KYC
+    - Implementar recolección de datos básicos de usuario
+    - Desarrollar validación de números telefónicos únicos
+    - Crear audit trail para acciones de compliance
+    - *Requisitos: 9.3*
+
+- [ ] 12. Implementar manejo de errores y monitoreo
+  - [ ] 12.1 Crear sistema centralizado de logging
+    - Implementar structured logging con contexto de transacción
+    - Configurar niveles de log apropiados por ambiente
+    - Desarrollar dashboard básico para monitoreo en tiempo real
+    - *Requisitos: 8.4, 10.1, 10.3*
+  - [ ] 12.2 Implementar error handling y recovery
+    - Crear mapeo de errores técnicos a mensajes de usuario
+    - Desarrollar sistema de retry automático para fallos temporales
+    - Implementar circuit breaker para servicios externos
+    - *Requisitos: 10.1, 10.2, 10.3*
+
+- [ ] 13. Desarrollar suite de testing completa
+  - [ ] 13.1 Crear tests unitarios para servicios críticos
+    - Implementar tests para Wallet Service (80% coverage mínimo)
+    - Crear tests para Transaction Service state machine
+    - Desarrollar tests para Bot Service intent parsing
+    - *Requisitos: Todos los requisitos*
+  - [ ] 13.2 Implementar tests de integración end-to-end
+    - Crear flujo de test completo emisor → receptor
+    - Desarrollar tests para escenarios de fallo y recovery
+    - Implementar performance tests para 100 transacciones concurrentes
+    - *Requisitos: Requisito 8, métricas PRD*
+
+- [ ] 14. Configurar métricas y analytics para validación MVP
+  - Implementar tracking de tasa de conversión (objetivo >80%)
+  - Crear medición de tiempo end-to-end (objetivo <5min)
+  - Desarrollar contador de transacciones exitosas (objetivo 100)
+  - Configurar alertas automáticas para métricas fuera de objetivo
+  - *Requisitos: 9.4, métricas PRD*
+
+- [ ] 15. Preparar deployment y configuración de entornos
+  - Configurar pipeline CI/CD con testing automático
+  - Crear configuración para entorno de desarrollo y staging
+  - Implementar scripts de migración de base de datos
+  - Configurar variables de entorno para diferentes providers
+  - *Requisitos: Infraestructura para todos los requisitos*
