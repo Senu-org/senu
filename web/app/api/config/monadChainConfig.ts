@@ -1,10 +1,10 @@
 import { http, defineChain } from "viem";
 import { createParaViemClient, createParaAccount } from "@getpara/viem-v2-integration";
-import { Para } from "@getpara/server-sdk";
+import { Para, Environment } from "@getpara/server-sdk";
 import dotenv from "dotenv";
 dotenv.config();
 
-const para = new Para(process.env.PARA_API_KEY || '');
+const para = new Para(Environment.SANDBOX, process.env.PARA_API_KEY || '');
 
 // Define Monad chain
 const monad = defineChain({
@@ -16,9 +16,9 @@ const monad = defineChain({
   },
 });
 
-const account =  createParaAccount(para);
+const account =  createParaAccount(para as any);
 
-const walletClient = createParaViemClient(para, {
+const walletClient = createParaViemClient(para as any, {
   account,
   chain: monad,
   transport: http("https://testnet-rpc.monad.xyz"), 
