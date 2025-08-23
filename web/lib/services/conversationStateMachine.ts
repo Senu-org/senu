@@ -13,6 +13,7 @@ export interface ConversationContext {
   recipient?: string; // e.g., recipient's phone number or identifier
   name?: string;
   country?: string;
+  lastActivity?: number; // Timestamp for session management
 }
 
 export class ConversationStateMachine {

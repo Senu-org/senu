@@ -67,11 +67,45 @@ Your webhook endpoint (`/api/bot/webhook`) automatically validates Twilio reques
 
 ### 6. Testing Your Integration
 
-1. **Send Test Message**
-   - Use the test endpoint: `POST /api/bot/test`
-   - Include phone number and message in request body
+#### WhatsApp Sandbox Testing
 
-2. **Verify Webhook**
+1. **Join the Sandbox**
+   - Go to [Twilio WhatsApp Sandbox](https://console.twilio.com/us1/develop/sms/manage/whatsapp-sandbox)
+   - Send the provided code to the sandbox number (`+14155238886`)
+   - Wait for confirmation message
+
+2. **Test Bot Flows**
+
+   **New User Registration:**
+   - Send any message → "Welcome to the Remittance Bot! What is your name?"
+   - Send "John" → "What country are you from?"
+   - Send "Mexico" → "Thanks, John! You are now registered and your wallet has been created."
+
+   **Send Money:**
+   - Send "/send" → "How much would you like to send?"
+   - Send "100" → "You want to send 100. A fee of 1 will be applied. Total: 101. Reply /confirm to proceed or /cancel to abort."
+   - Send "/confirm" → Payment link generated
+
+   **Cancel Transaction:**
+   - Send "/send" → "How much would you like to send?"
+   - Send "50" → Transaction details
+   - Send "/cancel" → "Transaction cancelled."
+
+   **Check Status:**
+   - Send "/status" → Status information
+
+3. **Debug Commands**
+   ```bash
+   # Test webhook endpoint
+   curl -X POST http://localhost:3000/api/bot/webhook \
+     -H "Content-Type: application/json" \
+     -d '{"Body":"test","From":"whatsapp:+1234567890"}'
+   
+   # Check ngrok status
+   ngrok status
+   ```
+
+4. **Verify Webhook**
    - Send a WhatsApp message to your Twilio number
    - Check your application logs for webhook processing
    - Verify the bot responds correctly
@@ -81,14 +115,14 @@ Your webhook endpoint (`/api/bot/webhook`) automatically validates Twilio reques
 1. Install dependencies:
    ```bash
    cd web
-   yarn install
+   npm install
    ```
 
 2. Set up environment variables (see above)
 
 3. Run the development server:
    ```bash
-   yarn dev
+   npm run dev
    ```
 
 4. For local development with webhooks:
@@ -101,6 +135,21 @@ Your webhook endpoint (`/api/bot/webhook`) automatically validates Twilio reques
    
    # Use the ngrok URL in your Twilio webhook configuration
    ```
+
+## Features
+
+### Conversation Management
+- **In-Memory Session Storage**: Fast, no-database conversation context management
+- **Automatic Cleanup**: Sessions expire after 30 minutes of inactivity
+- **State Machine**: Robust conversation flow management
+- **Multiple Implementations**: Support for in-memory, Redis, and database storage
+
+### WhatsApp Bot Features
+- **User Registration**: Collect name and country information
+- **Money Transfer**: Send money with fee calculation
+- **Transaction Management**: Confirm/cancel transactions
+- **Status Checking**: Check transaction status
+- **Session Persistence**: Maintain conversation context across messages
 
 ## API Endpoints
 
@@ -119,6 +168,7 @@ Your webhook endpoint (`/api/bot/webhook`) automatically validates Twilio reques
    - Verify webhook URL is accessible from internet
    - Check SSL certificate is valid
    - Ensure webhook URL is correctly configured in Twilio
+   - Check ngrok URL is correct and tunnel is active
 
 2. **Authentication Errors**
    - Verify Account SID and Auth Token are correct
@@ -129,6 +179,17 @@ Your webhook endpoint (`/api/bot/webhook`) automatically validates Twilio reques
    - Verify recipient number is in correct format
    - Check if recipient has joined WhatsApp sandbox (development)
    - Ensure message content complies with WhatsApp policies
+
+4. **Sandbox-Specific Issues**
+   - **Not receiving messages**: Ensure you've joined the WhatsApp sandbox
+   - **Session management**: Check if conversation context is being maintained (30-minute timeout)
+   - **Bot not responding**: Verify webhook URL is correctly set in Twilio console
+   - **Number format**: Use international format (e.g., +1234567890)
+
+5. **Development Environment Issues**
+   - **ngrok tunnel down**: Restart ngrok and update webhook URL
+   - **Server not running**: Ensure `npm run dev` is running on port 3000
+   - **Environment variables**: Check `.env.local` file exists and has correct values
 
 ### Support Resources
 
