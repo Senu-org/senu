@@ -37,8 +37,8 @@ export class BotService {
 
   async sendMessageWithButtons(to: string, message: string, buttons: string[]) {
     try {
-      // Create formatted button text with clear indicators
-      const buttonText = buttons.map((button, index) => `🔘 ${button}`).join('\n');
+      // Create formatted button text with numbers instead of circle emojis
+      const buttonText = buttons.map((button, index) => `${index + 1}. ${button}`).join('\n');
       const fullMessage = `${message}\n\n${buttonText}\n\nPlease reply with the number (1-${buttons.length}) or type the option name.`;
       
       await this.client.messages.create({

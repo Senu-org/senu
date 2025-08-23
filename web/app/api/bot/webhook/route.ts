@@ -51,7 +51,7 @@ async function sendCountryConfirmationMessage(to: string, userName: string, dete
 // Helper function to send country selection message
 async function sendCountrySelectionMessage(to: string) {
   const message = "Please select your country:";
-  const countries = ['United States', 'Mexico', 'Spain', 'Canada', 'United Kingdom', 'Other'];
+  const countries = ['Costa Rica', 'Nicaragua', 'Mexico', 'Other'];
   
   try {
     await botService.sendMessageWithButtons(to, message, countries);
@@ -214,16 +214,12 @@ export async function POST(request: NextRequest) {
         break;
       case ConversationState.AwaitingCountrySelection:
         if (intent === 'menu_selection_1') {
-          context.country = 'United States';
+          context.country = 'Costa Rica';
         } else if (intent === 'menu_selection_2') {
-          context.country = 'Mexico';
+          context.country = 'Nicaragua';
         } else if (intent === 'menu_selection_3') {
-          context.country = 'Spain';
+          context.country = 'Mexico';
         } else if (intent === 'menu_selection_4') {
-          context.country = 'Canada';
-        } else if (intent === 'menu_selection_5') {
-          context.country = 'United Kingdom';
-        } else if (intent === 'menu_selection_6') {
           await sendMessage(cleanFrom, "Please type your country name:");
           context.state = ConversationState.AwaitingCountrySelection;
           break;
