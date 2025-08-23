@@ -1,8 +1,9 @@
 // Wallet Service - centralized wallet management logic
 export class WalletService {
-  static async createWallet(phoneNumber: string) {
+  static async createWallet(userId: string) {
     // Implementation will be added here
-    throw new Error('Not implemented')
+    // For now, return a mock wallet object
+    return { id: `wallet-${userId}`, userId, balance: 0 };
   }
 
   static async getBalance(phoneNumber: string) {

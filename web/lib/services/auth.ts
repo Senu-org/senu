@@ -1,8 +1,9 @@
 // Auth Service - centralized authentication logic
 export class AuthService {
-  static async registerUser(phoneNumber: string) {
+  static async register(phoneNumber: string, name: string, country: string) {
     // Implementation will be added here
-    throw new Error('Not implemented')
+    // For now, return a mock user object
+    return { id: `user-${phoneNumber}`, phoneNumber, name, country };
   }
 
   static async validateToken(token: string) {
