@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import WalletService from '../../service/WalletService';
+import WalletService from '../../../../lib/services/wallet';
 //import  JSONRepository  from '../../repository/JSONrepository';
-import SupabaseRepository from '../../repository/SupabaseRepository';
+import SupabaseRepository from '../../../../lib/repository/SupabaseRepository';
 
 export async function POST(request: NextRequest) {
   try {
