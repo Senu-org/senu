@@ -1,4 +1,4 @@
-export function PaymentSecurity() {
+export function FundingSecurity() {
   const securityFeatures = [
     {
       icon: (

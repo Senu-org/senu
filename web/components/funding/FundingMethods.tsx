@@ -31,7 +31,7 @@ const paymentMethods: PaymentMethod[] = [
   }
 ];
 
-export function PaymentMethods() {
+export function FundingMethods() {
   const [expandedMethod, setExpandedMethod] = useState<string | null>(null);
 
   const handleMethodClick = (methodId: string) => {
@@ -61,8 +61,8 @@ export function PaymentMethods() {
         {/* Header */}
         <div className="relative px-4 py-6 bg-gradient-to-r from-blue-500 to-blue-600">
           <div className="text-center">
-            <h1 className="text-lg font-semibold text-white">Método de Pago</h1>
-            <p className="text-xs text-blue-100 mt-1">Selecciona tu método preferido</p>
+            <h1 className="text-lg font-semibold text-white">Método de Financiamiento</h1>
+            <p className="text-xs text-blue-100 mt-1">Selecciona cómo financiar tu envío</p>
           </div>
         </div>
 
