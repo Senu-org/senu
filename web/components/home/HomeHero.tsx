@@ -7,16 +7,6 @@ export function HomeHero() {
       <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 md:gap-10 lg:gap-12 items-center">
         {/* Left Content */}
         <div className="text-center lg:text-left">
-          <div className="flex items-center justify-center lg:justify-start mb-4 md:mb-6">
-            <img 
-              src="/senu.png" 
-              alt="Senu" 
-              className="w-12 h-12 md:w-16 md:h-16 mr-3 md:mr-4"
-            />
-            <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-800 leading-tight">
-              Senu
-            </h2>
-          </div>
           <h3 className="text-lg md:text-xl lg:text-2xl text-gray-700 mb-4 md:mb-6 font-medium">
             Envía Dinero por WhatsApp - Rápido, Fácil y Transparente
           </h3>
