@@ -16,14 +16,14 @@
     - BotService, NotificationService
   - _Requisitos: Todos (base técnica)_
 
-- [ ] 2. Implementar modelos de datos y esquemas de base de datos
+- [x] 2. Implementar modelos de datos y esquemas de base de datos
 
-  - [ ] 2.1 Crear tipos TypeScript para entidades principales
+  - [x] 2.1 Crear tipos TypeScript para entidades principales
     - Definir interfaces User, Transaction, CustodialWallet
     - Crear enums para TransactionStatus y ErrorCodes
     - Implementar tipos de requests/responses de API
     - _Requisitos: 1.3, 7.1, 7.3_
-  - [ ] 2.2 Configurar esquemas Supabase y migraciones
+  - [x] 2.2 Configurar esquemas Supabase y migraciones
     - Crear tablas users, transactions, custodial_wallets
     - Implementar triggers para updated_at automático
     - Configurar Row Level Security policies básicas

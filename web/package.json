@@ -12,6 +12,9 @@
     "clean": "rm -rf .next .turbo node_modules/.cache"
   },
   "dependencies": {
+    "@getpara/react-sdk": "^1.18.1",
+    "@getpara/server-sdk": "2.0.0-alpha.50",
+    "@getpara/viem-v2-integration": "^1.18.1",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-toast": "^1.1.5",
@@ -19,8 +22,11 @@
     "@reown/appkit-adapter-wagmi": "^1.0.0",
     "@supabase/supabase-js": "^2.39.0",
     "@tanstack/react-query": "^5.0.0",
+    "@types/web-push": "^3.6.4",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
+    "dotenv": "^17.2.1",
+    "ethers": "^6.15.0",
     "libphonenumber-js": "^1.12.13",
     "lucide-react": "^0.263.1",
     "next": "15.5.0",
@@ -28,8 +34,9 @@
     "react-dom": "^18",
     "tailwind-merge": "^2.0.0",
     "tailwindcss-animate": "^1.0.7",
-    "viem": "^2.0.0",
-    "wagmi": "^2.5.7"
+    "viem": "^2.34.0",
+    "wagmi": "^2.16.4",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.0.0",
