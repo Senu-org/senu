@@ -3,11 +3,16 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Production builds
 dist/
 build/
 out/
+.next/
+.nuxt/
+.vuepress/dist/
 
 # Environment variables
 .env
@@ -22,6 +27,10 @@ out/
 *.swp
 *.swo
 *~
+*.sublime-project
+*.sublime-workspace
+.atom/
+.brackets.json
 
 # OS generated files
 .DS_Store
@@ -52,6 +61,7 @@ temp/
 
 # Optional npm cache directory
 .npm
+.eslintcache
 
 # Optional REPL history
 .node_repl_history
@@ -66,15 +76,6 @@ temp/
 .cache
 .parcel-cache
 
-# next.js build output
-.next
-
-# nuxt.js build output
-.nuxt
-
-# vuepress build output
-.vuepress/dist
-
 # Serverless directories
 .serverless
 
@@ -83,3 +84,29 @@ temp/
 
 # DynamoDB Local files
 .dynamodb/
+
+# Turbo
+.turbo/
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+
+# Storybook
+storybook-static/
+
+# Sentry
+.sentryclirc
+
+# Vercel
+.vercel
+
+# Netlify
+.netlify
+
+# Local development
+.env*.local
