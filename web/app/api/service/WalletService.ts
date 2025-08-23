@@ -20,8 +20,7 @@ class WalletService {
     try {
       
       const hasWallet = await this.paraServer.hasPregenWallet({
-        pregenIdentifier: `+${number}`,
-        pregenIdentifierType: 'PHONE',
+        pregenId: { phone: `+${number}` },
       });
       
       if(hasWallet){
@@ -30,8 +29,7 @@ class WalletService {
 
       const generatedWallet = await this.paraServer.createPregenWallet({
         type: WalletType.EVM,
-        pregenIdentifier: `+${number}`,
-        pregenIdentifierType: 'PHONE',
+        pregenId: { phone: `+${number}` },
       });
 
       const userShare: string = this.paraServer.getUserShare() || '';
