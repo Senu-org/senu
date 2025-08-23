@@ -1,6 +1,6 @@
 import { PaymentsHeader } from './PaymentsHeader';
 import { PaymentsHero } from './PaymentsHero';
-import { SimplePaymentMethods } from './SimplePaymentMethods';
+import { CleanPaymentMethods } from './CleanPaymentMethods';
 
 export function Payments() {
   return (
@@ -13,7 +13,7 @@ export function Payments() {
       
       {/* Selector de métodos de pago estilo móvil nativo */}
       <div className="flex-1 flex items-center justify-center px-4 pb-8">
-        <SimplePaymentMethods />
+        <CleanPaymentMethods />
       </div>
       
       {/* Información de seguridad básica */}

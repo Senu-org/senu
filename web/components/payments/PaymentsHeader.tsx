@@ -10,9 +10,6 @@ export function PaymentsHeader() {
         <div className="text-sm text-gray-600">
           Métodos de Pago
         </div>
-        <button className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors duration-200">
-          <span className="text-sm md:text-base text-gray-600">?</span>
-        </button>
       </div>
     </div>
   );

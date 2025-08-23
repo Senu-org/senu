@@ -3,6 +3,7 @@ export { PaymentsHeader } from './PaymentsHeader';
 export { PaymentsHero } from './PaymentsHero';
 export { PaymentMethods } from './PaymentMethods';
 export { PaymentSecurity } from './PaymentSecurity';
+export { CleanPaymentMethods } from './CleanPaymentMethods';
 
 // Payment method components
 export { CreditCardMethod } from './methods/CreditCardMethod';

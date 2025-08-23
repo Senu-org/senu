@@ -7,9 +7,19 @@ export function HomeHero() {
       <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 md:gap-10 lg:gap-12 items-center">
         {/* Left Content */}
         <div className="text-center lg:text-left">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-800 mb-4 md:mb-6 leading-tight">
+          <div className="flex items-center justify-center lg:justify-start mb-4 md:mb-6">
+            <img 
+              src="/senu.png" 
+              alt="Senu" 
+              className="w-12 h-12 md:w-16 md:h-16 mr-3 md:mr-4"
+            />
+            <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-800 leading-tight">
+              Senu
+            </h2>
+          </div>
+          <h3 className="text-lg md:text-xl lg:text-2xl text-gray-700 mb-4 md:mb-6 font-medium">
             Envía Dinero por WhatsApp - Rápido, Fácil y Transparente
-          </h2>
+          </h3>
           <p className="text-base md:text-lg text-gray-600 mb-6 md:mb-8 leading-relaxed">
             Envía dinero a tus contactos tan fácil como mandar un mensaje. La forma más transparente y conveniente de enviar remesas entre Costa Rica y Nicaragua. Sin comisiones ocultas, sin salir de WhatsApp.
           </p>
@@ -56,10 +66,12 @@ export function HomeHero() {
                   
                   {/* Top Section - Senu Branding */}
                   <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                      </svg>
+                    <div className="w-16 h-16 mx-auto mb-4 bg-white rounded-2xl flex items-center justify-center shadow-lg border border-gray-100">
+                      <img 
+                        src="/senu.png" 
+                        alt="Senu" 
+                        className="w-12 h-12 object-contain"
+                      />
                     </div>
                     <h3 className="text-xl font-bold text-gray-800 mb-2">Senu</h3>
                     <p className="text-sm text-gray-500">Transferencias Instantáneas</p>
