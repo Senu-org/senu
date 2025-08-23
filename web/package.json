@@ -12,6 +12,8 @@
     "clean": "rm -rf .next .turbo node_modules/.cache"
   },
   "dependencies": {
+    "@getpara/server-sdk": "^1.18.1",
+    "@getpara/viem-v2-integration": "^2.0.0-alpha.50",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-toast": "^1.1.5",
@@ -22,14 +24,15 @@
     "@types/web-push": "^3.6.4",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
+    "dotenv": "^17.2.1",
     "lucide-react": "^0.263.1",
     "next": "15.5.0",
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^2.0.0",
     "tailwindcss-animate": "^1.0.7",
-    "viem": "^2.0.0",
-    "wagmi": "^2.5.7",
+    "viem": "^2.34.0",
+    "wagmi": "^2.16.4",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
