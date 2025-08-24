@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { ReactNode, createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAccount, useBalance, useChainId, useConnect, useDisconnect, useSwitchChain, useSendTransaction } from 'wagmi';
 import { UseReownWalletReturn, TransactionRequest } from '@/hooks/useReownWallet';
 import { parseEther, formatEther } from 'viem';
@@ -54,7 +54,7 @@ export function WalletKitProvider({ children }: WalletKitProviderProps) {
   };
 
   // Switch to Monad network
-  const switchToMonad = async (): Promise<boolean> => {
+  const switchToMonad = useCallback(async (): Promise<boolean> => {
     try {
       if (chainId !== MONAD_CHAIN_ID) {
         await switchChain({ chainId: MONAD_CHAIN_ID });
@@ -65,7 +65,7 @@ export function WalletKitProvider({ children }: WalletKitProviderProps) {
       console.error('Failed to switch to Monad:', error);
       return false;
     }
-  };
+  }, [chainId, switchChain, MONAD_CHAIN_ID]);
 
   // Send transaction function
   const sendTransaction = async (request: TransactionRequest) => {
@@ -156,7 +156,7 @@ export function WalletKitProvider({ children }: WalletKitProviderProps) {
     if (isConnected && !isConnectedToMonad) {
       switchToMonad();
     }
-  }, [isConnected, isConnectedToMonad]);
+  }, [isConnected, isConnectedToMonad, switchToMonad]);
 
   const walletHook: UseReownWalletReturn = {
     isConnecting: isConnecting || isSending,
