@@ -7,7 +7,6 @@ import ParaInstanceManager from "./ParaInstanceManager";
 dotenv.config();
 
 class WalletService {
-
   private paraManager: ParaInstanceManager;
   private walletRepository: IWalletRepository;
   private encryptionKey: string;
@@ -21,7 +20,7 @@ class WalletService {
   async createWallet(number: number): Promise<void> {
     try {
       const paraServer = this.paraManager.getParaServer();
-      
+
       const hasWallet = await paraServer.hasPregenWallet({
         pregenId: { phone: `+${number}` },
       });
@@ -35,17 +34,19 @@ class WalletService {
         pregenId: { phone: `+${number}` },
       });
 
-      const userShare: string = paraServer.getUserShare() || '';
+      const userShare: string = paraServer.getUserShare() || "";
       const encryptedShare = this.encryptUserShare(userShare);
 
       const walletData: CustodialWallet = {
         id: generatedWallet.id,
-        user_phone: `+${number}`,
-        blockchain_address: generatedWallet.address || '',
+        user_phone: number,
+        blockchain_address: generatedWallet.address || "",
         private_key_ref: JSON.stringify(encryptedShare),
-        balance_usd: 0,
+        type_wallet: WalletType.EVM,
+        encrypterUserShare: JSON.stringify(encryptedShare),
         nonce: 0,
-        created_at: new Date()
+        balance_usd: 0,
+        created_at: new Date(),
       };
 
       await this.walletRepository.save(walletData);
@@ -63,7 +64,6 @@ class WalletService {
     }
     const userShare = this.decryptUserShare(userShareEncrypted);
     this.paraManager.setUserShare(userShare);
-    
   }
 
   private encryptUserShare(userShare: string): {
@@ -109,8 +109,6 @@ class WalletService {
       throw new Error("Failed to decrypt user share");
     }
   }
-
-
 }
 
 export default WalletService;
