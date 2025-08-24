@@ -1,6 +1,7 @@
 import { FundingHero } from './FundingHero';
 import { FundingMethods } from './FundingMethods';
 import { AppHeader } from '../shared';
+import { WalletStatus } from '../shared/WalletStatus';
 
 interface FundingProps {
   phoneNumber?: string | null;
@@ -22,10 +23,15 @@ export function Funding({ phoneNumber, amount }: FundingProps) {
             <FundingHero />
           </div>
           
-                           {/* Methods section */}
-                 <div className="px-4 pb-8">
-                   <FundingMethods phoneNumber={phoneNumber} amount={amount} />
-                 </div>
+          {/* Wallet Status section */}
+          <div className="px-4 pb-6 max-w-sm mx-auto md:max-w-6xl">
+            <WalletStatus />
+          </div>
+          
+          {/* Methods section */}
+          <div className="px-4 pb-8">
+            <FundingMethods phoneNumber={phoneNumber} amount={amount} />
+          </div>
         </div>
       </main>
     </div>
