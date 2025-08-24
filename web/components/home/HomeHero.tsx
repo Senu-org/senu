@@ -1,4 +1,5 @@
 import { config } from '@/lib/config/env';
+import { WalletStatus } from '../shared/WalletStatus';
 
 export function HomeHero() {
   return (
@@ -29,6 +30,11 @@ export function HomeHero() {
           </svg>
           Ir a WhatsApp
         </a>
+      </div>
+
+      {/* Wallet Status Component */}
+      <div className="px-4">
+        <WalletStatus />
       </div>
 
       {/* iOS-style transaction card */}

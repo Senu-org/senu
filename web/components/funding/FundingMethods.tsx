@@ -4,8 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { CreditCardForm, CryptoForm } from '../shared/forms';
 import { CompletionAnimation } from '../shared';
 import { config } from '@/lib/config/env';
-import { useAppKitAccount, useAppKitBalance, createAppKit } from '@reown/appkit/react';
-import { walletKitService } from '@/lib/services/walletkit';
+import { useWalletKit } from '../providers/WalletKitProvider';
 
 interface PaymentMethod {
   id: string;
@@ -63,14 +62,17 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
   const [walletCreationStatus, setWalletCreationStatus] = useState<'creating' | 'success' | 'error' | null>(null);
   const [walletData, setWalletData] = useState<WalletData | null>(null);
   
-  // AppKit wallet states
-  const [isWalletConnecting, setIsWalletConnecting] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [walletBalance, setWalletBalance] = useState<string>('0');
-  
-  // AppKit hooks - simplified for now
-  const { address, isConnected } = useAppKitAccount();
-  const { fetchBalance } = useAppKitBalance();
+  // Use the unified wallet hook
+  const {
+    isConnected,
+    address: walletAddress,
+    balance: walletBalance,
+    isConnecting: isWalletConnecting,
+    connect: connectWallet,
+    isConnectedToMonad,
+    switchToMonad,
+    error: walletError
+  } = useWalletKit();
 
   useEffect(() => {
     setMounted(true);
@@ -111,33 +113,18 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
     }
   }, [phoneNumber, mounted, createWalletInBackground]);
 
-  // Wallet connection function
-  const connectWallet = async () => {
+  // Handle wallet connection
+  const handleConnectWallet = async () => {
     try {
-      setIsWalletConnecting(true);
+      await connectWallet();
       
-      // For now, simulate wallet connection
-      // TODO: Implement real AppKit connection
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate successful connection
-      const mockAddress = '0x' + Math.random().toString(16).substr(2, 40);
-      const mockBalance = (Math.random() * 100).toFixed(6);
-      
-      setWalletAddress(mockAddress);
-      setWalletBalance(mockBalance);
-      
-      console.log('Wallet connected (simulated):', { 
-        address: mockAddress, 
-        balance: mockBalance,
-        chainId: 1337 
-      });
-      
+      // If not connected to Monad, try to switch
+      if (isConnected && !isConnectedToMonad) {
+        await switchToMonad();
+      }
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       alert('Failed to connect wallet. Please try again.');
-    } finally {
-      setIsWalletConnecting(false);
     }
   };
 
@@ -226,7 +213,7 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
       case 'crypto':
         return (
           <div className="p-4 space-y-4">
-            {!walletAddress ? (
+            {!isConnected ? (
               <div className="text-center">
                 <div className="mb-4">
                   <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -236,9 +223,14 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
                   <p className="text-sm text-gray-500 mb-4">
                     Conecta tu wallet para enviar criptomonedas
                   </p>
+                  {walletError && (
+                    <p className="text-sm text-red-500 mb-4">
+                      Error: {walletError}
+                    </p>
+                  )}
                 </div>
                 <button
-                  onClick={connectWallet}
+                  onClick={handleConnectWallet}
                   disabled={isWalletConnecting}
                   className={`
                     w-full py-3 px-4 rounded-2xl font-semibold transition-all duration-200
@@ -268,6 +260,16 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
                   <div className="text-xs text-gray-500 font-mono break-all">
                     {walletAddress}
                   </div>
+                  {!isConnectedToMonad && (
+                    <div className="mt-2">
+                      <button
+                        onClick={switchToMonad}
+                        className="text-xs text-purple-600 hover:text-purple-700"
+                      >
+                        Cambiar a red Monad
+                      </button>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="bg-gray-50 rounded-2xl p-4">

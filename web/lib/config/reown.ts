@@ -6,9 +6,9 @@ export const reownConfig = {
   gaslessEnabled: config.reown.gaslessEnabled,
   
   // Monad network configuration
-  chains: [
+  networks: [
     {
-      id: 1337, // Monad testnet
+      id: 10143, // Monad testnet
       name: 'Monad Testnet',
       network: 'monad-testnet',
       nativeCurrency: {
@@ -18,10 +18,10 @@ export const reownConfig = {
       },
       rpcUrls: {
         default: {
-          http: ['https://rpc.testnet.monad.xyz'],
+          http: ['https://testnet-rpc.monad.xyz'],
         },
         public: {
-          http: ['https://rpc.testnet.monad.xyz'],
+          http: ['https://testnet-rpc.monad.xyz'],
         },
       },
       blockExplorers: {
@@ -36,7 +36,7 @@ export const reownConfig = {
   // WalletKit configuration
   walletKit: {
     // Only support Monad network
-    supportedChains: [1337],
+    supportedChains: [10143],
     
     // Gasless transaction configuration
     gasless: {
