@@ -1,39 +1,170 @@
-import {parseEther,isAddress,parseGwei} from 'viem'
+import {parseEther,isAddress,parseGwei, http} from 'viem'
 import { Para, Environment, WalletType } from "@getpara/server-sdk";
 import WalletService from './wallet'
 import { IWalletRepository } from '../interfaces/IWalletRepository';
 import dotenv from "dotenv";
-import { createParaAccount ,createParaViemClient} from "@getpara/viem-v2-integration";
-//import { createParaAccount, createParaViemClient } from "@getpara/viem";
+import { createParaAccount, createParaViemClient } from "@getpara/viem-v2-integration";
+import { monadChain, publicClient, MONAD_RPC_URL } from '../utils';
 dotenv.config();
 
 class TransactionService {
 
   private walletService: WalletService; 
   private paraServer : Para;
+  private walletRepository: IWalletRepository;
 
   constructor(walletRepository: IWalletRepository) {
     this.walletService = new WalletService(walletRepository);
-    this.paraServer = new Para(process.env.PARA_API_KEY || '');
+    this.paraServer = new Para(Environment.SANDBOX, process.env.PARA_API_KEY || '');
+    this.walletRepository = walletRepository;
   }
 
   async createTransaction(senderPhone: number, receiverPhone: number, amount: string) {
-  
+    try {
+      // Validate amount
+      const amountInWei = parseEther(amount);
+      if (amountInWei <= BigInt(0)) {
+        throw new Error('Invalid amount');
+      }
+
+      // Recover sender wallet
+      await this.walletService.recoverWallet(senderPhone);
+      
+      // Get receiver wallet address
+      const receiverAddress = await this.walletRepository.getAddressByPhoneNumber(receiverPhone);
+      if (!receiverAddress) {
+        throw new Error('Receiver wallet not found');
+      }
+
+      // Validate receiver address
+      if (!isAddress(receiverAddress)) {
+        throw new Error('Invalid receiver address');
+      }
+
+      // Get sender address
+      const senderAddress = await this.walletRepository.getAddressByPhoneNumber(senderPhone);
+      if (!senderAddress) {
+        throw new Error('Sender wallet not found');
+      }
+
+      // Create Para account and Viem client
+      const paraAccount = createParaAccount(this.paraServer as any);
+      const viemClient = createParaViemClient(this.paraServer as any, {
+        account: paraAccount,
+        chain: monadChain,
+        transport: http(MONAD_RPC_URL),
+      });
+
+      // Get transaction parameters
+      const gasPrice = await publicClient.getGasPrice();
+      const nonce = await publicClient.getTransactionCount({ address: senderAddress as `0x${string}` });
+      
+      // Prepare transaction
+      const transaction = {
+        account: paraAccount,
+        to: receiverAddress as `0x${string}`,
+        value: amountInWei,
+        gas: BigInt(21000), // Standard transfer gas limit
+        gasPrice: gasPrice,
+        nonce: nonce,
+        chain: monadChain,
+      };
+
+      // Send transaction
+      const hash = await viemClient.sendTransaction(transaction);
+      
+      // Wait for transaction confirmation
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      
+      // Return transaction details
+      return {
+        transactionId: hash,
+        sender: senderAddress,
+        receiver: receiverAddress,
+        amount: amount,
+        status: receipt.status === 'success' ? 'confirmed' : 'failed',
+        timestamp: new Date().toISOString(),
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed.toString(),
+        effectiveGasPrice: receipt.effectiveGasPrice.toString(),
+      };
+
+    } catch (error) {
+      console.error('Error creating transaction:', error);
+      throw error;
+    }
   }
     
   static async getTransactionStatus(transactionId: string) {
-    // Implementation will be added here
-    throw new Error('Not implemented')
+    try {
+      // Get transaction receipt from blockchain
+      const receipt = await publicClient.getTransactionReceipt({ hash: transactionId as `0x${string}` });
+      
+      return {
+        transactionId,
+        status: receipt.status === 'success' ? 'confirmed' : 'failed',
+        timestamp: new Date().toISOString(),
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed.toString(),
+        effectiveGasPrice: receipt.effectiveGasPrice.toString(),
+      };
+    } catch (error) {
+      console.error('Error getting transaction status:', error);
+      throw error;
+    }
   }
 
   static async retryTransaction(transactionId: string) {
-    // Implementation will be added here
-    throw new Error('Not implemented')
+    try {
+      // Get the original transaction
+      const originalTx = await publicClient.getTransaction({ hash: transactionId as `0x${string}` });
+      
+      if (!originalTx) {
+        throw new Error('Original transaction not found');
+      }
+
+      // Create a new transaction with higher gas price for retry
+      const newGasPrice = (originalTx.gasPrice || BigInt(0)) * BigInt(120) / BigInt(100); // 20% increase
+      
+      // Note: For retry, we would need the original sender's Para account
+      // This is a simplified implementation - in practice, you'd need to recover the sender's wallet
+      
+      return {
+        originalTransactionId: transactionId,
+        status: 'retry_requires_sender_account',
+        timestamp: new Date().toISOString(),
+        gasPriceIncrease: '20%',
+        message: 'Retry requires sender account recovery - implement in instance method',
+      };
+    } catch (error) {
+      console.error('Error retrying transaction:', error);
+      throw error;
+    }
   }
 
   static async processTransaction(transactionId: string) {
-    // Implementation will be added here
-    throw new Error('Not implemented')
+    try {
+      // Get transaction status
+      const status = await TransactionService.getTransactionStatus(transactionId);
+      
+      if (status.status === 'confirmed') {
+        // TODO: Update database records, send notifications, etc.
+        console.log(`Transaction ${transactionId} processed successfully`);
+      } else {
+        console.log(`Transaction ${transactionId} failed or pending`);
+      }
+      
+      return {
+        transactionId,
+        status: 'processed',
+        timestamp: new Date().toISOString(),
+        processedAt: new Date().toISOString(),
+        blockchainStatus: status.status,
+      };
+    } catch (error) {
+      console.error('Error processing transaction:', error);
+      throw error;
+    }
   }
 }
 
