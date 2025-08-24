@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { BankAccountForm, CryptoForm } from '../shared/forms';
-import { useAppKitAccount, useAppKitBalance } from '@reown/appkit/react';
-import { walletKitService } from '@/lib/services/walletkit';
+import { useWalletKit } from '../providers/WalletKitProvider';
 
 interface ReceiveMethod {
   id: string;
@@ -33,11 +32,6 @@ const receiveMethods: ReceiveMethod[] = [
 export function ReceiveMethods() {
   const [expandedMethod, setExpandedMethod] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
-  
-  // AppKit wallet states
-  const [isWalletConnecting, setIsWalletConnecting] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [walletBalance, setWalletBalance] = useState<string>('0');
   const [recentTransactions, setRecentTransactions] = useState<Array<{
     hash: string;
     amount: string;
@@ -46,44 +40,39 @@ export function ReceiveMethods() {
     timestamp: Date;
   }>>([]);
   
-  // AppKit hooks
-  const { address, isConnected } = useAppKitAccount();
-  const { fetchBalance } = useAppKitBalance();
+  // Use the unified wallet hook
+  const {
+    isConnected,
+    address: walletAddress,
+    balance: walletBalance,
+    isConnecting: isWalletConnecting,
+    connect: connectWallet,
+    isConnectedToMonad,
+    switchToMonad,
+    error: walletError
+  } = useWalletKit();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Wallet connection function
-  const connectWallet = async () => {
+  // Handle wallet connection
+  const handleConnectWallet = async () => {
     try {
-      setIsWalletConnecting(true);
+      await connectWallet();
       
-      // For now, simulate wallet connection
-      // TODO: Implement real AppKit connection
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate successful connection
-      const mockAddress = '0x' + Math.random().toString(16).substr(2, 40);
-      const mockBalance = (Math.random() * 100).toFixed(6);
-      
-      setWalletAddress(mockAddress);
-      setWalletBalance(mockBalance);
-      
-      console.log('Wallet connected (simulated):', { 
-        address: mockAddress, 
-        balance: mockBalance,
-        chainId: 1337 
-      });
+      // If not connected to Monad, try to switch
+      if (isConnected && !isConnectedToMonad) {
+        await switchToMonad();
+      }
       
       // Start monitoring for incoming transactions
-      startTransactionMonitoring(mockAddress);
-      
+      if (walletAddress) {
+        startTransactionMonitoring(walletAddress);
+      }
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       alert('Failed to connect wallet. Please try again.');
-    } finally {
-      setIsWalletConnecting(false);
     }
   };
 
@@ -186,7 +175,7 @@ Tipo: Cuenta Corriente Colones
       case 'crypto':
         return (
           <div className="p-4 space-y-4">
-            {!walletAddress ? (
+            {!isConnected ? (
               <div className="text-center">
                 <div className="mb-4">
                   <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -196,27 +185,13 @@ Tipo: Cuenta Corriente Colones
                   <p className="text-sm text-gray-500 mb-4">
                     Conecta tu wallet para recibir criptomonedas
                   </p>
-                </div>
-                <button
-                  onClick={connectWallet}
-                  disabled={isWalletConnecting}
-                  className={`
-                    w-full py-3 px-4 rounded-2xl font-semibold transition-all duration-200
-                    ${isWalletConnecting 
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : 'bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800'
-                    }
-                  `}
-                >
-                  {isWalletConnecting ? (
-                    <div className="flex items-center justify-center">
-                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Conectando...
-                    </div>
-                  ) : (
-                    'Conectar Wallet'
+                  {walletError && (
+                    <p className="text-sm text-red-500 mb-4">
+                      Error: {walletError}
+                    </p>
                   )}
-                </button>
+                </div>
+                <appkit-button />
               </div>
             ) : (
               <div className="space-y-4">
@@ -228,6 +203,16 @@ Tipo: Cuenta Corriente Colones
                   <div className="text-xs text-gray-500 font-mono break-all">
                     {walletAddress}
                   </div>
+                  {!isConnectedToMonad && (
+                    <div className="mt-2">
+                      <button
+                        onClick={switchToMonad}
+                        className="text-xs text-purple-600 hover:text-purple-700"
+                      >
+                        Cambiar a red Monad
+                      </button>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="bg-gray-50 rounded-2xl p-4">
@@ -253,8 +238,10 @@ Tipo: Cuenta Corriente Colones
                 {/* Copy address button */}
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(walletAddress);
-                    alert('Dirección copiada al portapapeles');
+                    if (walletAddress) {
+                      navigator.clipboard.writeText(walletAddress);
+                      alert('Dirección copiada al portapapeles');
+                    }
                   }}
                   className="w-full py-3 bg-purple-600 text-white font-semibold rounded-2xl transition-colors flex items-center justify-center space-x-2"
                 >
