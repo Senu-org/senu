@@ -20,7 +20,7 @@ class SupabaseRepository implements IWalletRepository {
    */
   async save(walletData: CustodialWallet): Promise<void> {
     try {
-      await setUserContext(walletData.user_phone.toString());
+      await setUserContext(walletData.phone.toString());
 
       const upsertPayload = {
         phone: walletData.phone,
@@ -40,7 +40,7 @@ class SupabaseRepository implements IWalletRepository {
       }
 
       console.log(
-        `✅ Wallet actualizado para el teléfono: ${walletData.user_phone}`
+        `✅ Wallet actualizado para el teléfono: ${walletData.phone}`
       );
     } catch (error) {
       console.error("❌ Error en SupabaseRepository.save:", error);

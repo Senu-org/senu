@@ -49,7 +49,7 @@ class JSONRepository implements IWalletRepository {
   async getIdByPhoneNumber(phoneNumber: number): Promise<string | null> {
     const wallets = await this.readWallets();
     const wallet = wallets.find(
-      (w: CustodialWallet) => String(w.user_phone) === String(phoneNumber)
+      (w: CustodialWallet) => String(w.phone) === String(phoneNumber)
     );
     console.log("Found wallet id:", wallet?.id);
     return wallet ? wallet.id : null;
@@ -58,10 +58,10 @@ class JSONRepository implements IWalletRepository {
   async getAddressByPhoneNumber(phoneNumber: number): Promise<string | null> {
     const wallets = await this.readWallets();
     const wallet = wallets.find(
-      (w: CustodialWallet) => String(w.user_phone) === String(phoneNumber)
+      (w: CustodialWallet) => String(w.phone) === String(phoneNumber)
     );
     console.log("Found wallet id:", wallet?.id);
-    return wallet ? wallet.blockchain_address : null;
+    return wallet ? wallet.wallet_address : null;
   }
 
   private async writeWallets(wallets: CustodialWallet[]): Promise<void> {
