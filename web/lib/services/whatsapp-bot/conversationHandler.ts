@@ -114,8 +114,8 @@ export class ConversationHandler {
   async initializeContext(phoneNumber: string, isRegistered: boolean, existingUser: User | null) {
     const context = this.conversationStateMachine.getInitialContext(phoneNumber);
     
-    if (isRegistered && existingUser) {
-      // Existing user - set state to showing menu and send welcome message
+    if (isRegistered && existingUser && existingUser.name && existingUser.country) {
+      // Existing user with complete data - set state to showing menu and send welcome message
       context.state = ConversationState.ShowingMenu;
       context.lastActivity = Date.now();
       await this.conversationContextService.setContext(context);
@@ -124,6 +124,28 @@ export class ConversationHandler {
         await this.sendWelcomeMessageWithMenu(phoneNumber, existingUser.name);
       } catch (error) {
         console.error('Failed to send welcome message with menu:', error);
+      }
+    } else if (existingUser && !existingUser.name) {
+      // User exists but missing name
+      context.state = ConversationState.AwaitingRegistrationName;
+      context.lastActivity = Date.now();
+      await this.conversationContextService.setContext(context);
+      
+      try {
+        await this.botService.sendMessage(phoneNumber, "Please tell me your name.");
+      } catch (error) {
+        console.error('Failed to send name request:', error);
+      }
+    } else if (existingUser && !existingUser.country) {
+      // User exists but missing country
+      context.state = ConversationState.AwaitingCountrySelection;
+      context.lastActivity = Date.now();
+      await this.conversationContextService.setContext(context);
+      
+      try {
+        await this.sendCountrySelectionMessage(phoneNumber);
+      } catch (error) {
+        console.error('Failed to send country selection:', error);
       }
     } else {
       // New user - start registration flow

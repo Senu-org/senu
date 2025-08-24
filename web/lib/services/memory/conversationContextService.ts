@@ -21,9 +21,11 @@ export class ConversationContextService {
   }
 
   async getContext(phoneNumber: string): Promise<ConversationContext | null> {
+    console.log(`Getting context for ${phoneNumber}, store size: ${this.contextStore.size}`);
     const context = this.contextStore.get(phoneNumber);
     
     if (!context) {
+      console.log(`No context found for ${phoneNumber}`);
       return null;
     }
 
@@ -51,6 +53,8 @@ export class ConversationContextService {
     };
     
     this.contextStore.set(context.phoneNumber, contextWithTimestamp);
+    console.log(`Context saved for ${context.phoneNumber}, state: ${context.state}, store size: ${this.contextStore.size}`);
+    console.log(`Store contents:`, Array.from(this.contextStore.keys()));
   }
 
   async deleteContext(phoneNumber: string): Promise<void> {

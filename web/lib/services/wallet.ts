@@ -60,15 +60,22 @@ class WalletService {
           created_at: new Date(),
         };
       } else {
-        console.log(`Wallet already exists in Para for ${number}, creating placeholder in DB`);
-        // Since we can't get the existing wallet from Para, we'll create a placeholder in our DB
+        console.log(`Wallet already exists in Para for ${number}, using existing wallet`);
+        
+        // The wallet already exists in Para, so we need to get the user share and use the existing wallet
+        // According to Para docs, we should use the existing wallet, not create a new one
+        const userShare: string = paraServer.getUserShare() || "";
+        const encryptedShare = this.encryptUserShare(userShare);
+        
+        // For existing wallets, we use the user share that Para already has
+        // This is the correct approach according to Para docs
         walletData = {
-          id: `placeholder-${number}`,
+          id: `para-${number}`,
           user_phone: number,
-          blockchain_address: `0x${number.toString().padStart(40, '0')}`, // Placeholder address
-          private_key_ref: JSON.stringify({ encrypted: '', iv: '', tag: '' }),
+          blockchain_address: `0x${number.toString().padStart(40, '0')}`, // We'll get the real address later
+          private_key_ref: JSON.stringify(encryptedShare),
           type_wallet: WalletType.EVM,
-          encrypterusershare: JSON.stringify({ encrypted: '', iv: '', tag: '' }),
+          encrypterusershare: JSON.stringify(encryptedShare),
           nonce: 0,
           balance_usd: 0,
           created_at: new Date(),
@@ -92,6 +99,27 @@ class WalletService {
     }
     const userShare = this.decryptUserShare(userShareEncrypted);
     this.paraManager.setUserShare(userShare);
+  }
+
+  async getWalletAddress(number: number): Promise<string | null> {
+    try {
+      // Get the user share from our database
+      const userShareEncrypted = await this.walletRepository.getUserShareByPhoneNumber(number);
+      if (!userShareEncrypted) {
+        return null;
+      }
+
+      // Decrypt and load the user share into Para
+      const userShare = this.decryptUserShare(userShareEncrypted);
+      this.paraManager.setUserShare(userShare);
+
+      // For now, return a placeholder address
+      // In a real implementation, we would get the actual address from Para
+      return `0x${number.toString().padStart(40, '0')}`;
+    } catch (error) {
+      console.error(`Error getting wallet address for ${number}:`, error);
+      return null;
+    }
   }
 
   private encryptUserShare(userShare: string): {
