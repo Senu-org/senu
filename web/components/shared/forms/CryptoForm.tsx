@@ -10,9 +10,10 @@ interface CryptoFormProps {
   mode?: 'funding' | 'receiving';
   onSubmit?: (data: CryptoFormData) => void;
   isLoading?: boolean;
+  amount?: number | null;
 }
 
-export function CryptoForm({ mode = 'funding', onSubmit, isLoading = false }: CryptoFormProps) {
+export function CryptoForm({ mode = 'funding', onSubmit, isLoading = false, amount }: CryptoFormProps) {
   const isFunding = mode === 'funding';
   
   const title = isFunding ? 'Pago con Criptomonedas' : 'Recibir Criptomonedas';

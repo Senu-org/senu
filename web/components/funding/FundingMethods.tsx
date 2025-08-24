@@ -30,6 +30,7 @@ const paymentMethods: PaymentMethod[] = [
 
 interface FundingMethodsProps {
   phoneNumber?: string | null;
+  amount?: number | null;
 }
 
 interface WalletData {
@@ -51,7 +52,7 @@ type CryptoFormData = {
   network?: string;
 }
 
-export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
+export function FundingMethods({ phoneNumber, amount }: FundingMethodsProps) {
   const [expandedMethod, setExpandedMethod] = useState<string | null>(null);
   const [showCompletion, setShowCompletion] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string>('');
@@ -283,6 +284,7 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
                   mode="funding" 
                   onSubmit={(paymentData) => handlePaymentSubmit(methodId, paymentData)}
                   isLoading={isProcessingPayment}
+                  amount={amount || 0}
                 />
               </div>
             )}
