@@ -39,14 +39,9 @@ class WalletService {
 
       const walletData: CustodialWallet = {
         id: generatedWallet.id,
-        user_phone: number,
-        blockchain_address: generatedWallet.address || "",
-        private_key_ref: JSON.stringify(encryptedShare),
-        type_wallet: WalletType.EVM,
-        encrypterUserShare: JSON.stringify(encryptedShare),
-        nonce: 0,
-        balance_usd: 0,
-        created_at: new Date(),
+        phone: number,
+        wallet_address: generatedWallet.address || '',
+        encrypterusershare: JSON.stringify(encryptedShare)
       };
 
       await this.walletRepository.save(walletData);

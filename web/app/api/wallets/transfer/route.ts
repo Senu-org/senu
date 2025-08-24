@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import  JSONRepository from '../../../../lib/repository/JSONrepository';
-//import SupabaseRepository from '../../../../lib/repository/SupabaseRepository';
+//import  JSONRepository from '../../../../lib/repository/JSONrepository';
+import SupabaseRepository from '../../../../lib/repository/SupabaseRepository';
 import { TransactionService } from '@/lib/services/transaction';
 
 export async function POST(request: NextRequest) {
   try {
     const { fromPhone, toPhone, amount } = await request.json()
-    const walletRepository = new JSONRepository();
+    const walletRepository = new SupabaseRepository();
     const transactionService = new TransactionService(walletRepository);
 
     
