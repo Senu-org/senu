@@ -16,7 +16,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#000000",
+  themeColor: "#10B981",
 };
 
 export default async function RootLayout({
@@ -31,9 +31,15 @@ export default async function RootLayout({
     <html lang="es">
       <head>
         <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/icon.svg" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Senu" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-TileColor" content="#10B981" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
