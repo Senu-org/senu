@@ -1,8 +1,8 @@
 'use client';
 
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
-import { useAccount, useBalance, useChainId, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
-import { useReownWallet, UseReownWalletReturn, TransactionRequest } from '@/hooks/useReownWallet';
+import { useAccount, useBalance, useChainId, useConnect, useDisconnect, useSwitchChain, useSendTransaction } from 'wagmi';
+import { UseReownWalletReturn, TransactionRequest } from '@/hooks/useReownWallet';
 import { parseEther, formatEther } from 'viem';
 
 const WalletKitContext = createContext<UseReownWalletReturn | undefined>(undefined);
@@ -20,16 +20,17 @@ export function WalletKitProvider({ children }: WalletKitProviderProps) {
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
+  const { sendTransaction: wagmiSendTransaction, isPending: isSending } = useSendTransaction();
   
   // Balance hook
   const { data: balanceData, refetch: refetchBalance } = useBalance({
     address,
   });
 
-  // Monad chain ID
+    // Monad chain ID
   const MONAD_CHAIN_ID = 10143;
   const isConnectedToMonad = chainId === MONAD_CHAIN_ID;
-
+  
   // Connect wallet function
   const connectWallet = async () => {
     try {
@@ -69,12 +70,49 @@ export function WalletKitProvider({ children }: WalletKitProviderProps) {
   // Send transaction function
   const sendTransaction = async (request: TransactionRequest) => {
     try {
-      // This would need to be implemented with proper transaction handling
-      // For now, return a mock response
-      return { success: true, hash: 'mock-transaction-hash' };
+      console.log('🚀 Sending real transaction:', request);
+      
+      if (!isConnected || !address) {
+        throw new Error('Wallet not connected');
+      }
+
+      if (!isConnectedToMonad) {
+        throw new Error('Please switch to Monad network first');
+      }
+
+      // Validate the transaction request
+      if (!request.to || !request.amount) {
+        throw new Error('Invalid transaction request: missing to or amount');
+      }
+
+      if (!isValidAddress(request.to)) {
+        throw new Error('Invalid recipient address');
+      }
+
+      // Prepare transaction data
+      const transactionData = {
+        to: request.to as `0x${string}`,
+        value: BigInt(request.amount),
+        chainId: MONAD_CHAIN_ID,
+      };
+
+      console.log('📤 Transaction data:', transactionData);
+
+      // Send the transaction using wagmi
+      const hash = await wagmiSendTransaction(transactionData);
+      
+      console.log('✅ Transaction sent successfully:', hash);
+
+      return { 
+        success: true, 
+        hash: hash as unknown as string
+      };
     } catch (error) {
-      console.error('Failed to send transaction:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      console.error('❌ Failed to send transaction:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error occurred' 
+      };
     }
   };
 
@@ -121,7 +159,7 @@ export function WalletKitProvider({ children }: WalletKitProviderProps) {
   }, [isConnected, isConnectedToMonad]);
 
   const walletHook: UseReownWalletReturn = {
-    isConnecting,
+    isConnecting: isConnecting || isSending,
     isConnected,
     address: address || null,
     balance: balanceData ? formatEther(balanceData.value) : '0',

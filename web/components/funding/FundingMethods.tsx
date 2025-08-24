@@ -63,6 +63,9 @@ export function FundingMethods({ phoneNumber, amount }: FundingMethodsProps) {
   const [walletCreationStatus, setWalletCreationStatus] = useState<'creating' | 'success' | 'error' | null>(null);
   const [walletData, setWalletData] = useState<WalletData | null>(null);
   
+  // Track if we should show dismiss button for crypto transactions
+  const [showDismissForCrypto, setShowDismissForCrypto] = useState(false);
+  
   // Use the unified wallet hook
   const {
     isConnected,
@@ -74,7 +77,9 @@ export function FundingMethods({ phoneNumber, amount }: FundingMethodsProps) {
     isConnectedToMonad,
     switchToMonad,
     error: walletError,
-    refreshBalance
+    refreshBalance,
+    sendTransaction,
+    parseAmount
   } = useWalletKit();
 
   useEffect(() => {
@@ -182,28 +187,107 @@ export function FundingMethods({ phoneNumber, amount }: FundingMethodsProps) {
         throw new Error('Wallet creation failed. Please try again.');
       }
       
-      // Wallet should be ready now, create user with wallet + payment info
-      if (walletCreationStatus === 'success' && walletData) {
-        // TODO: Replace with actual user creation API call
-        // Example: await userService.createUser({
-        //   walletData,
-        //   paymentMethod: { methodId, ...paymentData },
-        //   phoneNumber
-        // });
+      // Handle different payment methods
+      if (methodId === 'crypto') {
+        // Handle crypto payment with wallet transaction
+        if (!isConnected) {
+          throw new Error('Please connect your wallet first');
+        }
+
+        if (!isConnectedToMonad) {
+          throw new Error('Please switch to Monad network');
+        }
+
+        if (!walletAddress) {
+          throw new Error('Wallet address not available');
+        }
+
+        if (!amount) {
+          throw new Error('Amount is required for crypto payment');
+        }
+
+        // Convert amount to MON (1 USD = 0.0001 MON)
+        const amountInMon = amount * 0.0001;
+        const amountInWei = parseAmount(amountInMon.toString());
+
+        // For crypto payments, we need to send the transaction
+        // The receiver address should come from the paymentData or be fetched
+        const receiverAddress = (paymentData as CryptoFormData).walletAddress;
         
-        // Simulate user creation (remove when implementing real API)
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        console.log('User created with:', {
-          wallet: walletData,
-          paymentMethod: { methodId, ...paymentData },
-          phoneNumber
-        });
-        
-        // Stop loading state - this will trigger the success animation
-        setIsProcessingPayment(false);
+        if (!receiverAddress) {
+          throw new Error('Receiver address is required for crypto payment');
+        }
+
+        // Prepare transaction request
+        const transactionRequest = {
+          to: receiverAddress,
+          amount: amountInWei,
+          tokenSymbol: 'MONAD'
+        };
+
+        console.log('Sending crypto transaction:', transactionRequest);
+
+        // Send the transaction
+        const result = await sendTransaction(transactionRequest);
+
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to send crypto transaction');
+        }
+
+        console.log('Crypto transaction sent successfully:', result);
+
+        // Create user with wallet + payment info
+        if (walletCreationStatus === 'success' && walletData) {
+          // TODO: Replace with actual user creation API call
+          // Example: await userService.createUser({
+          //   walletData,
+          //   paymentMethod: { methodId, ...paymentData },
+          //   phoneNumber,
+          //   transactionHash: result.hash
+          // });
+          
+          // Simulate user creation (remove when implementing real API)
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          console.log('User created with crypto payment:', {
+            wallet: walletData,
+            paymentMethod: { methodId, ...paymentData },
+            phoneNumber,
+            transactionHash: result.hash
+          });
+          
+          // Stop loading state - this will trigger the success animation
+          setIsProcessingPayment(false);
+          
+          // Enable dismiss button for crypto transactions
+          setShowDismissForCrypto(true);
+        } else {
+          throw new Error('Wallet not ready. Please try again.');
+        }
       } else {
-        throw new Error('Wallet not ready. Please try again.');
+        // Handle other payment methods (credit card, etc.)
+        if (walletCreationStatus === 'success' && walletData) {
+          // TODO: Replace with actual user creation API call
+          // Example: await userService.createUser({
+          //   walletData,
+          //   paymentMethod: { methodId, ...paymentData },
+          //   phoneNumber
+          // });
+          
+          // Simulate user creation (remove when implementing real API)
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          console.log('User created with:', {
+            wallet: walletData,
+            paymentMethod: { methodId, ...paymentData },
+            phoneNumber
+          });
+          
+          // Stop loading state - this will trigger the success animation
+          setIsProcessingPayment(false);
+        } else {
+          throw new Error('Wallet not ready. Please try again.');
+        }
       }
       
     } catch (error) {
@@ -219,6 +303,7 @@ export function FundingMethods({ phoneNumber, amount }: FundingMethodsProps) {
   const handleCompletionFinish = () => {
     setShowCompletion(false);
     setExpandedMethod(null);
+    setShowDismissForCrypto(false);
     // Here you could redirect to the next step or update the UI
   };
 
@@ -417,6 +502,7 @@ export function FundingMethods({ phoneNumber, amount }: FundingMethodsProps) {
         redirectTo={config.whatsapp.getWhatsAppUrl("Hola, ya configuré mi método de pago y quiero enviar una remesa")}
         isLoading={isProcessingPayment || walletCreationStatus === 'creating'}
         loadingMessage="Creando tu perfil de usuario..."
+        showDismissButton={showDismissForCrypto}
       />
     </>
   );
