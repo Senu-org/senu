@@ -20,7 +20,7 @@ export function HomeHero() {
       {/* iOS-style WhatsApp button */}
       <div className="px-4">
         <a
-          href={config.whatsapp.getWhatsAppUrl("Hola, quiero enviar una remesa")}
+          href={config.whatsapp.getWhatsAppUrl("join scale-satellites")}
           target="_blank"
           rel="noopener noreferrer"
           className="w-full flex items-center justify-center px-6 py-4 bg-green-500 active:bg-green-600 text-white font-semibold rounded-2xl shadow-lg active:shadow-md transform active:scale-95 transition-all duration-150"
