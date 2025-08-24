@@ -32,7 +32,7 @@ export interface WalletState {
 
 class ReownService {
   private static instance: ReownService;
-  private appKit: any = null;
+  private appKit: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
   private walletState: WalletState = {
     isConnecting: false,
     isConnected: false,
@@ -57,7 +57,7 @@ class ReownService {
       try {
         this.appKit = await createAppKit({
           ...reownConfig,
-        } as any);
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       } catch (error) {
         console.error('Failed to initialize AppKit:', error);
         throw new Error('Failed to initialize wallet connection');
@@ -238,7 +238,7 @@ class ReownService {
     try {
       const num = parseFloat(amount) / Math.pow(10, decimals);
       return num.toFixed(6);
-    } catch (error) {
+    } catch {
       return '0.000000';
     }
   }
@@ -250,7 +250,7 @@ class ReownService {
     try {
       const num = parseFloat(amount) * Math.pow(10, decimals);
       return num.toString();
-    } catch (error) {
+    } catch {
       return '0';
     }
   }
