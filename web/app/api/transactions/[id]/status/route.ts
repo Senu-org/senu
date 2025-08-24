@@ -70,13 +70,13 @@ export async function GET(
     }
 
     // Get transaction status
-    const transactionStatus = await TransactionService.getTransactionStatus(transactionId, userPhone)
+    const transactionStatus = await TransactionService.getTransactionStatus(transactionId)
 
     // Add cache headers for different statuses
     const headers = new Headers()
     
     // For completed or failed transactions, allow longer caching
-    if (['completed', 'failed'].includes(transactionStatus.transaction.status)) {
+    if (['completed', 'failed'].includes(transactionStatus.status)) {
       headers.set('Cache-Control', 'public, max-age=3600') // 1 hour
     } else {
       // For pending transactions, minimal caching to enable polling
@@ -84,12 +84,12 @@ export async function GET(
     }
 
     // Add polling recommendations in headers
-    if (!['completed', 'failed'].includes(transactionStatus.transaction.status)) {
+    if (!['completed', 'failed'].includes(transactionStatus.status)) {
       headers.set('X-Poll-Interval', '10000') // Suggest 10 second polling interval
       headers.set('X-Retry-After', '10')
     }
 
-    return NextResponse.json<ApiResponse<TransactionStatusResponse>>({
+    return NextResponse.json<ApiResponse<any>>({
       success: true,
       data: transactionStatus
     }, { 

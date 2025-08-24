@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import  JSONRepository from '../../../../lib/repository/JSONrepository';
 //import SupabaseRepository from '../../../../lib/repository/SupabaseRepository';
-import TransactionService from '@/lib/services/transaction';
+import { TransactionService } from '@/lib/services/transaction';
 
 export async function POST(request: NextRequest) {
   try {

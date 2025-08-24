@@ -79,13 +79,13 @@ export async function POST(
     }
 
     // Retry the transaction
-    const retriedTransaction = await TransactionService.retryTransaction(transactionId, userPhone)
+    const retriedTransaction = await TransactionService.retryTransaction(transactionId)
 
     // Set appropriate headers
     const headers = new Headers()
     headers.set('Location', `/api/transactions/${transactionId}/status`)
     
-    return NextResponse.json<ApiResponse<Transaction>>({
+    return NextResponse.json<ApiResponse<any>>({
       success: true,
       data: retriedTransaction
     }, { 

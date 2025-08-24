@@ -8,7 +8,7 @@ import { monadChain, publicClient, MONAD_RPC_URL } from '../utils';
 import ParaInstanceManager from './ParaInstanceManager';
 dotenv.config();
 
-class TransactionService {
+export class TransactionService {
 
   private walletService: WalletService; 
   private paraManager: ParaInstanceManager;
@@ -173,6 +173,20 @@ class TransactionService {
       throw error;
     }
   }
-}
 
-export default TransactionService;
+  static async getUserTransactions(userPhone: string, limit: number = 50): Promise<any[]> {
+    try {
+      // TODO: Implement actual database query to get user transactions
+      // For now, return empty array as placeholder
+      console.log(`Getting transactions for user: ${userPhone}, limit: ${limit}`);
+      
+      // This should query the database for transactions where userPhone is either sender or receiver
+      // Return transactions sorted by created_at descending
+      
+      return [];
+    } catch (error) {
+      console.error('Error getting user transactions:', error);
+      throw error;
+    }
+  }
+}

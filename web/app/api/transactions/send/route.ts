@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TransactionService } from '../../../../lib/services/transaction'
 import { AuthService } from '../../../../lib/services/auth'
+import SupabaseRepository from '../../../../lib/repository/SupabaseRepository'
 import type { SendTransactionRequest, ErrorCodes, ApiResponse, SendTransactionResponse } from '../../../../lib/types'
 
 /**
@@ -125,9 +126,17 @@ export async function POST(request: NextRequest) {
       onramp_provider
     }
 
-    const result = await TransactionService.createTransaction(userPhone, transactionRequest)
+    // Create repository and service instances
+    const walletRepository = new SupabaseRepository()
+    const transactionService = new TransactionService(walletRepository)
+    
+    // Extract phone number without + prefix for the service
+    const senderPhone = parseInt(userPhone.replace('+', ''))
+    const receiverPhoneNumber = parseInt(receiver_phone.replace('+', ''))
+    
+    const result = await transactionService.createTransaction(senderPhone, receiverPhoneNumber, amount_usd.toString())
 
-    return NextResponse.json<ApiResponse<SendTransactionResponse>>({
+    return NextResponse.json<ApiResponse<any>>({
       success: true,
       data: result
     }, { status: 201 })

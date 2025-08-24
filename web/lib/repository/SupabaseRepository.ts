@@ -179,6 +179,70 @@ class SupabaseRepository implements IWalletRepository {
       throw error;
     }
   }
+
+  /**
+   * Retrieves wallet ID by phone number from Supabase
+   * @param phoneNumber - Phone number to lookup
+   * @returns Wallet ID string or null if not found
+   */
+  async getIdByPhoneNumber(phoneNumber: number): Promise<string | null> {
+    try {
+      await setUserContext(`+${phoneNumber}`);
+
+      const { data, error } = await supabaseServer
+        .from(TABLES.CUSTODIAL_WALLETS)
+        .select('id')
+        .eq('user_phone', `+${phoneNumber}`)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log(`ℹ️ No wallet found for phone: +${phoneNumber}`);
+          return null;
+        }
+        
+        console.error('❌ Error retrieving wallet ID from Supabase:', error);
+        throw new Error(`Failed to retrieve wallet ID: ${error.message}`);
+      }
+
+      return data?.id || null;
+    } catch (error) {
+      console.error('❌ Error in SupabaseRepository.getIdByPhoneNumber:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieves wallet address by phone number from Supabase
+   * @param phoneNumber - Phone number to lookup
+   * @returns Wallet address string or null if not found
+   */
+  async getAddressByPhoneNumber(phoneNumber: number): Promise<string | null> {
+    try {
+      await setUserContext(`+${phoneNumber}`);
+
+      const { data, error } = await supabaseServer
+        .from(TABLES.CUSTODIAL_WALLETS)
+        .select('blockchain_address')
+        .eq('user_phone', `+${phoneNumber}`)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log(`ℹ️ No wallet found for phone: +${phoneNumber}`);
+          return null;
+        }
+        
+        console.error('❌ Error retrieving wallet address from Supabase:', error);
+        throw new Error(`Failed to retrieve wallet address: ${error.message}`);
+      }
+
+      return data?.blockchain_address || null;
+    } catch (error) {
+      console.error('❌ Error in SupabaseRepository.getAddressByPhoneNumber:', error);
+      throw error;
+    }
+  }
 }
 
 export default SupabaseRepository;
