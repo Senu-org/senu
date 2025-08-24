@@ -27,8 +27,10 @@ export function useUserAddress(): UseUserAddressReturn {
 
       const response = await apiService.getWalletAddress(numericPhone);
       
-      if (response.data?.wallet_address) {
-        setReceiverAddress(response.data.wallet_address);
+      const walletAddress = response.data?.wallet_address_external || response.data?.wallet_address;
+      
+      if (walletAddress) {
+        setReceiverAddress(walletAddress);
       } else {
         setError('Receiver does not have a valid wallet address configured');
         setReceiverAddress(null);
