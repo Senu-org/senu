@@ -1,5 +1,5 @@
-import { Funding } from '@/components/funding';
+import { FundingPageWithValidation } from '@/components/funding';
 
 export default function FundingPage() {
-  return <Funding />;
+  return <FundingPageWithValidation />;
 }
