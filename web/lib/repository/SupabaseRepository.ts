@@ -14,12 +14,12 @@ class SupabaseRepository implements IWalletRepository {
    */
   async save(walletData: CustodialWallet): Promise<void> {
     try {
-      await setUserContext(walletData.user_phone.toString());
+      await setUserContext(walletData.phone.toString());
 
       const upsertPayload = {
-        phone: walletData.user_phone,
-        wallet_address: walletData.blockchain_address,
-        encrypterUserShare: walletData.private_key_ref,
+        phone: walletData.phone,
+        wallet_address: walletData.wallet_address,
+        encrypterUserShare: walletData.encrypterUserShare,
         id: walletData.id,
       } as const;
 
@@ -33,7 +33,7 @@ class SupabaseRepository implements IWalletRepository {
       }
 
       console.log(
-        `✅ Wallet actualizado para el teléfono: ${walletData.user_phone}`
+        `✅ Wallet actualizado para el teléfono: ${walletData.phone}`
       );
     } catch (error) {
       console.error("❌ Error en SupabaseRepository.save:", error);
