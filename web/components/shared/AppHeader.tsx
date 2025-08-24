@@ -18,9 +18,9 @@ export function AppHeader({ showBackButton = false, onBackClick }: AppHeaderProp
   };
 
   return (
-    <header className="relative z-10 bg-white border-b border-gray-100">
+    <header className="relative z-10">
       {/* iOS-style status bar area */}
-      <div className="h-11 bg-white"></div>
+      <div className="h-11"></div>
       
       {/* Header content */}
       <div className="px-4 py-3">

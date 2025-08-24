@@ -8,7 +8,7 @@ interface ReceiveMoneyProps {
 
 export function ReceiveMoney({ phoneNumber }: ReceiveMoneyProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <AppHeader />
       
       <main className="relative">

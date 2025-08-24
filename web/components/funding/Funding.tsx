@@ -8,7 +8,7 @@ interface FundingProps {
 
 export function Funding({ phoneNumber }: FundingProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <AppHeader />
       
       <main className="relative">

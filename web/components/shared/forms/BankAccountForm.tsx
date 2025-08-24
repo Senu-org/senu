@@ -8,7 +8,6 @@ interface BankAccountFormProps {
 export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormProps) {
   const isFunding = mode === 'funding';
   
-  const title = isFunding ? 'Transferencia Bancaria' : 'Cuenta Bancaria';
   const description = isFunding 
     ? 'Transfiere directamente desde tu cuenta bancaria' 
     : 'Configura tu cuenta bancaria para recibir transferencias';
@@ -25,7 +24,6 @@ export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormP
     <div className="p-4 bg-white space-y-4">
       {/* iOS-style form header */}
       <div className="text-center pb-2">
-        <h4 className="text-lg font-semibold text-gray-900">{title}</h4>
         <p className="text-sm text-gray-600 mt-1">
           {description}
         </p>

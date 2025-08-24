@@ -29,13 +29,12 @@ export function CreditCardForm({ mode = 'funding', onSubmit, isLoading = false }
 
   return (
     <div className="p-4 bg-white space-y-4">
-                  {/* iOS-style form header */}
-            <div className="text-center pb-2">
-              <h4 className="text-lg font-semibold text-gray-900">Tarjeta de Crédito</h4>
-              <p className="text-sm text-gray-600 mt-1">
-                Ingresa los datos de tu tarjeta de forma segura
-              </p>
-            </div>
+      {/* iOS-style form header */}
+      <div className="text-center pb-2">
+        <p className="text-sm text-gray-600 mt-1">
+          Ingresa los datos de tu tarjeta de forma segura
+        </p>
+      </div>
 
 
 
@@ -52,7 +51,7 @@ export function CreditCardForm({ mode = 'funding', onSubmit, isLoading = false }
             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
           />
         </div>
-        
+
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
@@ -77,7 +76,7 @@ export function CreditCardForm({ mode = 'funding', onSubmit, isLoading = false }
             />
           </div>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-900 mb-2">
             Nombre del Titular
@@ -91,40 +90,40 @@ export function CreditCardForm({ mode = 'funding', onSubmit, isLoading = false }
       </div>
 
       {/* iOS-style submit button */}
-                  <div className="pt-2">
-              <button 
-                onClick={() => {
-                  // Collect form data (in real implementation, get from form state)
-                  const formData = {
-                    cardNumber: '****-****-****-1234', // Mock data
-                    expiryDate: '12/25',
-                    cvv: '***',
-                    holderName: 'John Doe'
-                  };
-                  onSubmit?.(formData);
-                }}
-                disabled={isLoading}
-                className={`
+      <div className="pt-2">
+        <button
+          onClick={() => {
+            // Collect form data (in real implementation, get from form state)
+            const formData = {
+              cardNumber: '****-****-****-1234', // Mock data
+              expiryDate: '12/25',
+              cvv: '***',
+              holderName: 'John Doe'
+            };
+            onSubmit?.(formData);
+          }}
+          disabled={isLoading}
+          className={`
                   w-full py-4 text-white font-semibold rounded-2xl shadow-sm transition-all duration-150 text-base
                   ${isLoading
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-purple-500 active:bg-purple-600 active:shadow-md transform active:scale-95'
-                  }
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-purple-500 active:bg-purple-600 active:shadow-md transform active:scale-95'
+            }
                 `}
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Procesando pago...</span>
-                  </div>
-                ) : (
-                  'Confirmar Pago con Tarjeta'
-                )}
-              </button>
+        >
+          {isLoading ? (
+            <div className="flex items-center justify-center space-x-2">
+              <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Procesando pago...</span>
             </div>
+          ) : (
+            'Confirmar Pago con Tarjeta'
+          )}
+        </button>
+      </div>
 
       {/* iOS-style security notice */}
       <div className="flex items-center justify-center space-x-2 pt-2">

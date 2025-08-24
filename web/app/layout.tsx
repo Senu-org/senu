@@ -36,7 +36,7 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <AppWrapper>
-          <div className="min-h-screen bg-background">{children}</div>
+          <div className="min-h-screen bg-gray-50">{children}</div>
         </AppWrapper>
       </body>
     </html>
