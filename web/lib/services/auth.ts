@@ -21,14 +21,22 @@ const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 // Auth Service - centralized authentication logic
 
 export class AuthService {
-  private static baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  private static getBaseUrl(): string {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Ensure the URL has a protocol
+    if (appUrl.startsWith('http://') || appUrl.startsWith('https://')) {
+      return appUrl;
+    }
+    // Add https:// protocol for production URLs
+    return `https://${appUrl}`;
+  }
 
   /**
    * Check if user exists and get user data via REST API
    */
   static async getUserByPhone(phoneNumber: string): Promise<User | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/users/${phoneNumber}`, {
+      const response = await fetch(`${this.getBaseUrl()}/api/users/${phoneNumber}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +79,7 @@ export class AuthService {
    */
   static async updateUser(phoneNumber: string, updates: { name?: string; country?: string }): Promise<UserResponse | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/users/${phoneNumber}`, {
+      const response = await fetch(`${this.getBaseUrl()}/api/users/${phoneNumber}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -127,8 +135,8 @@ export class AuthService {
    */
   static async createWallet(phoneNumber: string): Promise<boolean> {
     try {
-      console.log(`Creating wallet for phone number: ${phoneNumber} in the url ${this.baseUrl}/api/wallets/create`);
-      const response = await fetch(`${this.baseUrl}/api/wallets/create`, {
+      console.log(`Creating wallet for phone number: ${phoneNumber} in the url ${this.getBaseUrl()}/api/wallets/create`);
+      const response = await fetch(`${this.getBaseUrl()}/api/wallets/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
