@@ -9,9 +9,9 @@ export async function POST(request: NextRequest) {
     const walletRepository = new JSONRepository();
     const transactionService = new TransactionService(walletRepository);
 
+    
     const transaction = await transactionService.createTransaction(fromPhone, toPhone, amount);
     console.log('Transaction created:', transaction);
-    // Wallet transfer logic will be implemented here
     
     return NextResponse.json({ success: true, transactionId: 'temp-id' })
   } catch {

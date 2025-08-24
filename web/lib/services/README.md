@@ -1,139 +1,160 @@
-# Services
+# Wallet Integration with Reown AppKit
 
-This directory contains all the service layer implementations for the WhatsApp remittance bot.
+This document describes the wallet integration architecture using Reown AppKit for connecting to the Monad blockchain.
 
-## Structure
+## Architecture Overview
 
-```
-web/lib/services/
-├── index.ts                    # Main exports
-├── README.md                   # This overview
-├── auth.ts                     # Authentication service
-├── notification.ts             # Notification service
-├── transaction.ts              # Transaction service
-├── wallet.ts                   # Wallet service
-├── whatsapp-bot/               # WhatsApp bot services
-│   ├── README.md              # WhatsApp bot documentation
-│   ├── bot.ts                 # Twilio bot service
-│   └── conversationStateMachine.ts # Conversation state management
-└── memory/                     # Memory-based conversation context
-    ├── index.ts                # Memory services exports
-    ├── README.md               # Memory services documentation
-    ├── conversationContextService.ts
-    ├── redisConversationContextService.ts
-    └── conversationContextFactory.ts
-```
+The wallet integration is built using a layered approach:
 
-## Services Overview
+1. **AppKitProvider** - Provides the Reown AppKit context
+2. **WalletKitProvider** - Provides a unified wallet interface
+3. **useReownWallet Hook** - Custom hook that wraps AppKit functionality
+4. **Components** - Use the hook for wallet operations
 
-### Core Services
-- **auth.ts** - User authentication and registration
-- **notification.ts** - Push notifications and messaging
-- **transaction.ts** - Money transfer operations
-- **wallet.ts** - Digital wallet management
+## Components
 
-### WhatsApp Bot Services
-- **whatsapp-bot/** - All WhatsApp bot related services
-  - **bot.ts** - Twilio WhatsApp bot integration and intent parsing
-  - **conversationStateMachine.ts** - State machine for conversation flow
-  - **README.md** - Detailed WhatsApp bot documentation
+### AppKitProvider
+Wraps the application with Reown's AppKit provider, configured for Monad testnet.
 
-### Conversation Management
-- **memory/** - Conversation context management (in-memory, Redis, etc.)
+```tsx
+import { AppKitProvider } from '@/components/providers/AppKitProvider';
 
-## Documentation
-
-For detailed information about specific service groups:
-
-- **[WhatsApp Bot Services](./whatsapp-bot/README.md)** - Bot integration, conversation management, and user interactions
-- **[Memory Services](./memory/README.md)** - Conversation context management implementations
-
-## Usage
-
-```typescript
-// Import specific services
-import { BotService } from '@/lib/services/whatsapp-bot/bot';
-import { ConversationContextFactory } from '@/lib/services/memory';
-
-// Or import from main index
-import { BotService, ConversationContextFactory } from '@/lib/services';
+<AppKitProvider>
+  <YourApp />
+</AppKitProvider>
 ```
 
-## Key Features
+### WalletKitProvider
+Provides a unified wallet interface through React context.
 
-### WhatsApp Bot
-- Interactive menu system with numbered options
-- Default commands for existing users
-- Welcome messages with personalized greetings
-- State management for conversation flow
-- Intent parsing and command recognition
+```tsx
+import { WalletKitProvider } from '@/components/providers/WalletKitProvider';
 
-### Authentication
-- User registration and lookup
-- Phone number-based authentication
-- Registration status verification
-
-### Memory Management
-- Conversation context persistence
-- Multiple storage backends (in-memory, Redis)
-- Session management across interactions
-
-## Para Instance Management
-
-### Problem
-Previously, both `WalletService` and `TransactionService` had their own separate `Para` instances, which caused issues when:
-1. `WalletService.recoverWallet()` set the user share on its Para instance
-2. `TransactionService` tried to use its own Para instance for transactions, which didn't have the user share set
-
-### Solution
-Implemented a **Singleton Pattern** with `ParaInstanceManager` to ensure both services use the same Para instance.
-
-### Architecture
-
-```
-ParaInstanceManager (Singleton)
-├── Single Para instance
-├── User share management
-└── Shared across all services
-
-WalletService
-├── Uses ParaInstanceManager.getInstance()
-├── Creates wallets
-└── Recovers wallets (sets user share)
-
-TransactionService
-├── Uses ParaInstanceManager.getInstance()
-├── Creates transactions
-└── Uses same Para instance with user share
+<WalletKitProvider>
+  <YourComponents />
+</WalletKitProvider>
 ```
 
-### Key Benefits
+### useReownWallet Hook
+Custom hook that provides a clean interface for wallet operations.
 
-1. **Single Source of Truth**: One Para instance across all services
-2. **State Consistency**: User share set in WalletService is available in TransactionService
-3. **Security**: Automatic user share clearing after transactions
-4. **Memory Efficiency**: No duplicate Para instances
+```tsx
+import { useReownWallet } from '@/hooks/useReownWallet';
 
-### Usage
-
-```typescript
-// In any service
-const paraManager = ParaInstanceManager.getInstance();
-const paraServer = paraManager.getParaServer();
-
-// Set user share (WalletService)
-paraManager.setUserShare(userShare);
-
-// Use for transactions (TransactionService)
-const paraAccount = createParaAccount(paraServer);
-
-// Clear for security
-paraManager.clearUserShare();
+function MyComponent() {
+  const {
+    isConnected,
+    address,
+    balance,
+    connect,
+    disconnect,
+    sendTransaction,
+    // ... other methods
+  } = useReownWallet();
+  
+  // Use wallet functionality
+}
 ```
 
-### Security Features
+## Configuration
 
-- Automatic user share clearing after transactions
-- User share clearing on errors
-- Methods to check if user share is loaded
-- Centralized user share management
+The wallet integration is configured in `web/lib/config/reown.ts`:
+
+- **Project ID**: Your Reown project ID
+- **Client ID**: Your Reown client ID
+- **Chains**: Monad testnet configuration
+- **WalletKit**: Gasless transactions and other settings
+
+## Environment Variables
+
+Add these to your `.env.local`:
+
+```bash
+NEXT_PUBLIC_REOWN_PROJECT_ID=your_project_id
+NEXT_PUBLIC_REOWN_CLIENT_ID=your_client_id
+NEXT_PUBLIC_REOWN_GASLESS_ENABLED=true
+```
+
+## Usage Examples
+
+### Connecting a Wallet
+
+```tsx
+const { connect, isConnected, address } = useReownWallet();
+
+const handleConnect = async () => {
+  await connect();
+  // Modal will open for wallet selection
+};
+```
+
+### Sending Transactions
+
+```tsx
+const { sendTransaction, isConnected } = useReownWallet();
+
+const handleSend = async () => {
+  if (!isConnected) return;
+  
+  const result = await sendTransaction({
+    to: '0x...',
+    amount: '0.1',
+    tokenSymbol: 'MONAD'
+  });
+  
+  if (result.success) {
+    console.log('Transaction hash:', result.hash);
+  }
+};
+```
+
+### Checking Network
+
+```tsx
+const { isConnectedToMonad, switchToMonad } = useReownWallet();
+
+const handleSwitchNetwork = async () => {
+  if (!isConnectedToMonad) {
+    await switchToMonad();
+  }
+};
+```
+
+## Features
+
+- ✅ Real Monad blockchain connection
+- ✅ Gasless transactions
+- ✅ Multi-wallet support
+- ✅ Network switching
+- ✅ Balance monitoring
+- ✅ Error handling
+- ✅ TypeScript support
+
+## Migration from Old Implementation
+
+The old implementation used simulated wallet connections. The new implementation:
+
+1. Uses real Reown AppKit hooks
+2. Connects to actual Monad testnet
+3. Provides unified interface across components
+4. Eliminates code duplication
+5. Improves error handling and user experience
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Modal not opening**: Ensure AppKitProvider is wrapping your app
+2. **Connection fails**: Check your Reown project configuration
+3. **Network issues**: Verify Monad testnet RPC is accessible
+4. **Type errors**: Make sure all dependencies are installed
+
+### Debug Mode
+
+Enable debug logging by setting:
+
+```bash
+NEXT_PUBLIC_DEBUG=true
+```
+
+This will log wallet connection events and transaction details to the console.

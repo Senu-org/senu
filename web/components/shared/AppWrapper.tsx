@@ -2,12 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { SplashScreen } from './SplashScreen';
+import { WalletKitProvider } from '@/components/providers';
+import { AppKitProvider } from '@/components/providers/AppKitProvider';
+import { ServiceWorkerProvider } from '@/components/pwa';
 
 interface AppWrapperProps {
   children: React.ReactNode;
+  cookies?: string | null;
 }
 
-export function AppWrapper({ children }: AppWrapperProps) {
+export function AppWrapper({ children, cookies }: AppWrapperProps) {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
@@ -23,15 +27,23 @@ export function AppWrapper({ children }: AppWrapperProps) {
     setShowSplash(false);
   };
 
+  // Use the cookies passed from the server
+
   return (
-    <>
-      {/* Splash screen - always shows first */}
-      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
-      
-      {/* Main content - hidden by CSS initially, then controlled by state */}
-      <div className={`splash-loading ${!showSplash ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
-        {children}
-      </div>
-    </>
+    <AppKitProvider cookies={cookies}>
+      <WalletKitProvider>
+        <ServiceWorkerProvider>
+          <>
+            {/* Splash screen - always shows first */}
+            {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+            
+            {/* Main content - hidden by CSS initially, then controlled by state */}
+            <div className={`splash-loading ${!showSplash ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+              {children}
+            </div>
+          </>
+        </ServiceWorkerProvider>
+      </WalletKitProvider>
+    </AppKitProvider>
   );
 }
