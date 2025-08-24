@@ -1,4 +1,4 @@
-import { reownConfig } from '@/lib/config/reown';
+// import { reownConfig } from '@/lib/config/reown';
 
 export interface WalletConnection {
   isConnected: boolean;
@@ -39,8 +39,8 @@ export class WalletKitService {
       return {
         isConnected: false,
       };
-    } catch (error) {
-      console.error('Failed to connect wallet:', error);
+    } catch (_error) {
+      console.error('Failed to connect wallet:', _error);
       throw new Error('Failed to connect wallet');
     }
   }
@@ -52,8 +52,8 @@ export class WalletKitService {
     try {
       // Implementation will be in components using useWalletKit
       console.log('Wallet disconnected');
-    } catch (error) {
-      console.error('Failed to disconnect wallet:', error);
+    } catch (_error) {
+      console.error('Failed to disconnect wallet:', _error);
       throw new Error('Failed to disconnect wallet');
     }
   }
@@ -61,13 +61,12 @@ export class WalletKitService {
   /**
    * Get wallet balance
    */
-  async getWalletBalance(address: string): Promise<string> {
+  async getWalletBalance(_address: string): Promise<string> { // eslint-disable-line @typescript-eslint/no-unused-vars
     try {
       // This will be implemented using WalletKit's balance functions
       // For now, return a placeholder
       return '0';
-    } catch (error) {
-      console.error('Failed to get wallet balance:', error);
+    } catch {
       throw new Error('Failed to get wallet balance');
     }
   }
@@ -128,7 +127,7 @@ export class WalletKitService {
     try {
       const num = parseFloat(amount) / Math.pow(10, decimals);
       return num.toFixed(6);
-    } catch (error) {
+    } catch {
       return '0.000000';
     }
   }
@@ -140,7 +139,7 @@ export class WalletKitService {
     try {
       const num = parseFloat(amount) * Math.pow(10, decimals);
       return num.toString();
-    } catch (error) {
+    } catch {
       return '0';
     }
   }
