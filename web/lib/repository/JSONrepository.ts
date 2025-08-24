@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path"; 
-import { IWalletRepository } from "../../lib/interfaces/IWalletRepository";
+import { IWalletRepository } from "../interfaces/IWalletRepository";
 
 class JSONRepository implements IWalletRepository{    
         private readonly filePath: string;     
@@ -41,7 +41,23 @@ class JSONRepository implements IWalletRepository{
         async getUserShareByPhoneNumber(phoneNumber: number): Promise<string | null> {
             const wallets = await this.readWallets();
             const wallet = wallets.find((w: any) => w.phoneNumber === phoneNumber);
-            return wallet ? wallet.encryptedShare : null;
+            return wallet ? wallet.encryptedUserShare : null;
+        }
+
+        async hasWallet(phoneNumber: number): Promise<boolean> {
+            const wallets = await this.readWallets();
+            const wallet = wallets.find((w: any) => w.phoneNumber === phoneNumber);
+            return !!wallet;
+        }
+
+        async updateBalance(phoneNumber: number, balance: number): Promise<void> {
+            // Not implemented for JSON repository - would require more complex data structure
+            console.log(`JSON Repository: updateBalance not implemented for phone ${phoneNumber}, balance ${balance}`);
+        }
+
+        async updateNonce(phoneNumber: number, nonce: number): Promise<void> {
+            // Not implemented for JSON repository - would require more complex data structure
+            console.log(`JSON Repository: updateNonce not implemented for phone ${phoneNumber}, nonce ${nonce}`);
         }
         
         private async writeWallets(wallets: any[]): Promise<void> {

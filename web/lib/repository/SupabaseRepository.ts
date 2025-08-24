@@ -1,14 +1,183 @@
+import { supabaseServer, TABLES, setUserContext } from "../config/supabase";
 import { IWalletRepository } from "../interfaces/IWalletRepository";
+import { CustodialWallet } from "../types";
 
+/**
+ * Supabase implementation of wallet repository
+ * Handles secure storage and retrieval of wallet data and encrypted user shares
+ */
 class SupabaseRepository implements IWalletRepository {
-  // Implementación específica para Supabase
-  async save(walletData: any): Promise<void> {
-    // Lógica para guardar en Supabase
+  
+  /**
+   * Saves wallet data to Supabase custodial_wallets table
+   * @param walletData - Wallet data containing id, address, type, phoneNumber, and encryptedUserShare
+   */
+  async save(walletData: {
+    id: string;
+    address: string;
+    type: string;
+    phoneNumber: number;
+    encryptedUserShare: string;
+  }): Promise<void> {
+    try {
+      // Set user context for RLS policies
+      await setUserContext(`+${walletData.phoneNumber}`);
+
+      // Map wallet data to database schema
+      const custodialWalletData: Partial<CustodialWallet> = {
+        user_phone: `+${walletData.phoneNumber}`,
+        blockchain_address: walletData.address,
+        private_key_ref: walletData.encryptedUserShare, // Store encrypted share as key reference
+        balance_usd: 0, // Initial balance
+        nonce: 0 // Initial nonce
+      };
+
+      // Insert wallet data into custodial_wallets table
+      const { error } = await supabaseServer
+        .from(TABLES.CUSTODIAL_WALLETS)
+        .insert(custodialWalletData);
+
+      if (error) {
+        console.error('❌ Error saving wallet to Supabase:', error);
+        throw new Error(`Failed to save wallet: ${error.message}`);
+      }
+
+      console.log(`✅ Wallet saved successfully for phone: +${walletData.phoneNumber}`);
+    } catch (error) {
+      console.error('❌ Error in SupabaseRepository.save:', error);
+      throw error;
+    }
   }
 
+  /**
+   * Retrieves encrypted user share by phone number from Supabase
+   * @param phoneNumber - Phone number to lookup
+   * @returns Encrypted user share string or null if not found
+   */
   async getUserShareByPhoneNumber(phoneNumber: number): Promise<string | null> {
-    // Lógica para obtener el share del usuario por número de teléfono desde Supabase
-    return null; // Reemplazar con la lógica real
+    try {
+      // Set user context for RLS policies
+      await setUserContext(`+${phoneNumber}`);
+
+      // Query custodial_wallets table for the user's encrypted share
+      const { data, error } = await supabaseServer
+        .from(TABLES.CUSTODIAL_WALLETS)
+        .select('private_key_ref')
+        .eq('user_phone', `+${phoneNumber}`)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No rows returned - wallet not found
+          console.log(`ℹ️ No wallet found for phone: +${phoneNumber}`);
+          return null;
+        }
+        
+        console.error('❌ Error retrieving user share from Supabase:', error);
+        throw new Error(`Failed to retrieve user share: ${error.message}`);
+      }
+
+      if (!data?.private_key_ref) {
+        console.log(`ℹ️ No encrypted share found for phone: +${phoneNumber}`);
+        return null;
+      }
+
+      console.log(`✅ User share retrieved successfully for phone: +${phoneNumber}`);
+      return data.private_key_ref;
+    } catch (error) {
+      console.error('❌ Error in SupabaseRepository.getUserShareByPhoneNumber:', error);
+      
+      // Re-throw the error unless it's a "not found" case
+      if (error instanceof Error && error.message.includes('Failed to retrieve user share')) {
+        throw error;
+      }
+      
+      // For unexpected errors, wrap them
+      throw new Error(`Database error while retrieving user share: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Checks if a wallet exists for the given phone number
+   * @param phoneNumber - Phone number to check
+   * @returns True if wallet exists, false otherwise
+   */
+  async hasWallet(phoneNumber: number): Promise<boolean> {
+    try {
+      await setUserContext(`+${phoneNumber}`);
+
+      const { data, error } = await supabaseServer
+        .from(TABLES.CUSTODIAL_WALLETS)
+        .select('id')
+        .eq('user_phone', `+${phoneNumber}`)
+        .single();
+
+      if (error && error.code === 'PGRST116') {
+        return false; // No wallet found
+      }
+
+      if (error) {
+        console.error('❌ Error checking wallet existence:', error);
+        throw new Error(`Failed to check wallet existence: ${error.message}`);
+      }
+
+      return !!data;
+    } catch (error) {
+      console.error('❌ Error in SupabaseRepository.hasWallet:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Updates wallet balance
+   * @param phoneNumber - Phone number of wallet owner
+   * @param balance - New balance in USD
+   */
+  async updateBalance(phoneNumber: number, balance: number): Promise<void> {
+    try {
+      await setUserContext(`+${phoneNumber}`);
+
+      const { error } = await supabaseServer
+        .from(TABLES.CUSTODIAL_WALLETS)
+        .update({ balance_usd: balance })
+        .eq('user_phone', `+${phoneNumber}`);
+
+      if (error) {
+        console.error('❌ Error updating wallet balance:', error);
+        throw new Error(`Failed to update wallet balance: ${error.message}`);
+      }
+
+      console.log(`✅ Wallet balance updated for phone: +${phoneNumber}`);
+    } catch (error) {
+      console.error('❌ Error in SupabaseRepository.updateBalance:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Updates wallet nonce
+   * @param phoneNumber - Phone number of wallet owner
+   * @param nonce - New nonce value
+   */
+  async updateNonce(phoneNumber: number, nonce: number): Promise<void> {
+    try {
+      await setUserContext(`+${phoneNumber}`);
+
+      const { error } = await supabaseServer
+        .from(TABLES.CUSTODIAL_WALLETS)
+        .update({ nonce })
+        .eq('user_phone', `+${phoneNumber}`);
+
+      if (error) {
+        console.error('❌ Error updating wallet nonce:', error);
+        throw new Error(`Failed to update wallet nonce: ${error.message}`);
+      }
+
+      console.log(`✅ Wallet nonce updated for phone: +${phoneNumber}`);
+    } catch (error) {
+      console.error('❌ Error in SupabaseRepository.updateNonce:', error);
+      throw error;
+    }
   }
 }
 
