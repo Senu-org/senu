@@ -39,7 +39,7 @@ class WalletService {
 
       const walletData: CustodialWallet = {
         id: generatedWallet.id,
-        user_phone: number,
+        user_phone: `+${number}`,
         blockchain_address: generatedWallet.address || "",
         private_key_ref: JSON.stringify(encryptedShare),
         type_wallet: WalletType.EVM,

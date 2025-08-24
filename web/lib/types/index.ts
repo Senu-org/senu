@@ -75,7 +75,7 @@ export interface Transaction {
 
 export interface CustodialWallet {
   id: string;
-  user_phone: number;
+  user_phone: string;
   blockchain_address: string;
   type_wallet: string;
   encrypterUserShare: string;
