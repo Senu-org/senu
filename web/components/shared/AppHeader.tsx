@@ -37,6 +37,11 @@ export function AppHeader({ showBackButton = false, onBackClick }: AppHeaderProp
             <span className="text-lg font-bold text-gray-900">Senu</span>
           </Link>
 
+          {/* Transaction History Link */}
+          <Link href="/transactions" className="ml-4 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+            Transactions
+          </Link>
+
           {/* Right side - Back button if needed */}
           <div className="ml-auto">
             {showBackButton && (

@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: transaction-indexer
+description: Indexes transactions on the Monad network.
+networks:
+  - id: 10143
+    rpc: "https://testnet-rpc.monad.xyz"
+    start_block: 0
+    contracts:
+      - name: "Transactions"
+        address: "0x0000000000000000000000000000000000000000" # Replace with actual contract address
+        handler: src/EventHandlers.ts
+        events:
+          - event: "Transfer(address indexed from, address indexed to, uint256 value)"
+          - event: "Transaction(address indexed from, address indexed to, uint256 amount, string currency)"
+# Unordered multichain mode allows you to index events from multiple chains
+# in realtime but doesn't guarentee ordering between chains
+# https://docs.envio.dev/docs/HyperIndex/multichain-indexing#unordered-multichain-mode
+unordered_multichain_mode: true
+# Preload optimisation makes your indexer much faster.
+# But be aware that your handlers will run twice,
+# so make sure to use Effect API for external calls.
+preload_handlers: true

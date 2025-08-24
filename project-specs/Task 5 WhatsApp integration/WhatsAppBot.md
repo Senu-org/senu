@@ -16,11 +16,13 @@ This document outlines the implementation plan for the WhatsApp Bot Service, a c
 - **Transaction Initiation**: Amount input and confirmation flow
 - **Phone Number Detection**: Country detection from phone numbers
 - **Welcome Messages**: Personalized welcome for existing users
+- **Core Service Layer Implementation**: Conversation, transaction, balance, and notification handlers implemented.
 
 #### 🔄 Partially Implemented
 - **Transaction Processing**: Basic flow exists but lacks integration with actual payment systems
 - **Balance Checking**: Menu option exists but not connected to wallet service
 - **Transaction Status**: Menu option exists but not connected to transaction service
+- **Wallet Creation**: Endpoint exists but needs full integration with user registration and error handling.
 
 ### Available API Endpoints Analysis
 
@@ -28,11 +30,11 @@ Based on the codebase analysis, the following endpoints are available for integr
 
 #### ✅ **IMPLEMENTED** Endpoints
 - **POST** `/api/auth/register` - User registration (basic structure exists)
-- **POST** `/api/wallets/create` - Wallet creation (basic structure exists)
 - **POST** `/api/transactions/send` - Send transactions (basic structure exists)
 - **POST** `/api/notifications/send` - Send notifications (basic structure exists)
 
 #### ⚠️ **PENDING** Endpoints (Structure exists but needs implementation)
+- **POST** `/api/wallets/create` - Wallet creation (basic structure exists)
 - **GET** `/api/wallets/[phone]/balance` - Get wallet balance
 - **POST** `/api/wallets/transfer` - Transfer between wallets
 - **GET** `/api/transactions/[id]/status` - Get transaction status
@@ -387,7 +389,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
     - [ ] Add retry mechanism for failed validations
     - [ ] Cache validation results to avoid repeated API calls
   - [ ] Update conversation context schema
-    - [ ] Add `recipient_wa_id` field for validated WhatsApp ID
+    - [ ] Add `recipient_w-id` field for validated WhatsApp ID
     - [ ] Add `recipient_name` field for display purposes
     - [ ] Add `validation_status` field to track validation state
   - [ ] Update transaction flow in WhatsApp bot
@@ -398,7 +400,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
     - [ ] Display appropriate messages based on validation results
   - [ ] Create user profile management system
     - [ ] Create `users` table in Supabase for storing user information
-    - [ ] Implement `getUserByPhone(wa_id)` function
+    - [ ] Implement `getUserByPhone(w-id)` function
     - [ ] Add user registration data collection during bot registration
     - [ ] Store user name and country during registration flow
   - [ ] Add environment variables for WhatsApp API
@@ -440,7 +442,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
     CREATE TABLE users (
         id TEXT PRIMARY KEY,
         phone_number TEXT NOT NULL UNIQUE,
-        wa_id TEXT NOT NULL UNIQUE,
+        w-id TEXT NOT NULL UNIQUE,
         name TEXT NOT NULL,
         country TEXT NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -448,7 +450,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
     );
     
     CREATE INDEX idx_users_phone_number ON users(phone_number);
-    CREATE INDEX idx_users_wa_id ON users(wa_id);
+    CREATE INDEX idx_users_w-id ON users(w-id);
     ```
   - [ ] Update WhatsApp bot registration flow
     - [ ] Call wallet creation after successful user registration
