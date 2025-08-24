@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
     // Step 1: Get user data via REST API
     const existingUser = await AuthService.getUserByPhone(cleanFrom);
     
-    // Check if context has timed out (30 minutes)
-    if (conversationHandler.isContextTimedOut(context)) {
+    // Check if context has timed out (30 minutes) - but only if we have a context
+    if (context && conversationHandler.isContextTimedOut(context)) {
       console.log(`Context timed out for ${cleanFrom}, resetting...`);
       context = null;
     }
@@ -96,8 +96,10 @@ export async function POST(request: NextRequest) {
     const intent = conversationHandler.parseIntent(message);
     console.log(`Intent for "${message}": ${intent}`);
     
-    // Update last activity timestamp
-    context = conversationHandler.updateContextActivity(context);
+    // Update last activity timestamp if we have a context
+    if (context) {
+      context = conversationHandler.updateContextActivity(context);
+    }
     
     // Handle /start command - reset context and show menu for existing users
     if (intent === '/start') {
@@ -152,13 +154,45 @@ export async function POST(request: NextRequest) {
         context.state = ConversationState.AwaitingCountrySelection;
       }
       handledInput = true;
+    } else if (context.state === ConversationState.ShowingMenu && intent.startsWith('menu_selection_')) {
+      // Handle menu selections before state transition
+      if (intent === 'menu_selection_1') {
+        // Send Money
+        context = await transactionHandler.handleSendMoneySelection(cleanFrom, context);
+      } else if (intent === 'menu_selection_2') {
+        // Check Balance
+        await balanceHandler.handleBalanceMenuSelection(cleanFrom);
+        await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
+      } else if (intent === 'menu_selection_3') {
+        // Transaction Status
+        await notificationHandler.handleTransactionStatusMenuSelection(cleanFrom);
+        await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
+      } else if (intent === 'menu_selection_4') {
+        // Help
+        await notificationHandler.handleHelpMenuSelection(cleanFrom);
+        await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
+      }
+      handledInput = true;
+    } else if (context.state === ConversationState.ConfirmingTransaction && intent.startsWith('menu_selection_')) {
+      // Handle transaction confirmation before state transition
+      const result = await transactionHandler.handleTransactionConfirmation(cleanFrom, intent, context);
+      context = result.context;
+      if (result.shouldDeleteContext) {
+        await conversationHandler.deleteContext(cleanFrom);
+      }
+      handledInput = true;
     } else {
       const newState = conversationStateMachine.transition(context.state, intent);
       context.state = newState;
     }
 
-    console.log(`Processing state: ${context.state}, intent: ${intent}`);
-    switch (context.state) {
+    console.log(`Processing state: ${context.state}, intent: ${intent}, handledInput: ${handledInput}`);
+    
+    // If input was already handled, skip the switch statement
+    if (handledInput) {
+      console.log(`Input already handled, skipping switch statement`);
+    } else {
+      switch (context.state) {
       case ConversationState.AwaitingRegistrationName:
         console.log(`In AwaitingRegistrationName state, intent: ${intent}`);
         if (intent === 'text_input') {
@@ -219,38 +253,29 @@ export async function POST(request: NextRequest) {
         }
         break;
       case ConversationState.ShowingMenu:
-        if (intent === 'menu_selection_1') {
-          // Send Money
-          context = await transactionHandler.handleSendMoneySelection(cleanFrom, context);
-        } else if (intent === 'menu_selection_2') {
-          // Check Balance
-          await balanceHandler.handleBalanceMenuSelection(cleanFrom);
-          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
-        } else if (intent === 'menu_selection_3') {
-          // Transaction Status
-          await notificationHandler.handleTransactionStatusMenuSelection(cleanFrom);
-          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
-        } else if (intent === 'menu_selection_4') {
-          // Help
-          await notificationHandler.handleHelpMenuSelection(cleanFrom);
-          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
-        } else if (intent === '/menu') {
+        // Menu selections are handled before state transition
+        if (intent === '/menu') {
           // User typed /menu command
           await transactionHandler.handleMenuCommand(cleanFrom, existingUser?.name);
         } else {
           await transactionHandler.handleInvalidMenuSelection(cleanFrom, existingUser?.name);
         }
         break;
+      case ConversationState.AwaitingRecipientPhone:
+        // This state is handled before the switch statement
+        // If we reach here, it means the input wasn't handled properly
+        await conversationHandler.sendMessage(cleanFrom, "Please enter the recipient's phone number:");
+        break;
+      case ConversationState.AwaitingAmount:
+        // This state is handled before the switch statement
+        // If we reach here, it means the input wasn't handled properly
+        await conversationHandler.sendMessage(cleanFrom, "Please enter the amount you want to send:");
+        break;
 
       case ConversationState.ConfirmingTransaction:
-        // Only handle transaction confirmation if we didn't just handle input
-        if (!handledInput) {
-          const result = await transactionHandler.handleTransactionConfirmation(cleanFrom, intent, context);
-          context = result.context;
-          if (result.shouldDeleteContext) {
-            await conversationHandler.deleteContext(cleanFrom);
-          }
-        }
+        // Transaction confirmation is handled before state transition
+        // If we reach here, it means the input wasn't handled properly
+        await conversationHandler.sendMessage(cleanFrom, "Please select a valid option from the buttons above.");
         break;
       case ConversationState.Idle:
         if (intent === '/start') {
@@ -281,6 +306,7 @@ export async function POST(request: NextRequest) {
       default:
         await conversationHandler.sendMessage(cleanFrom, "Something went wrong. Please try again.");
         break;
+      }
     }
 
     if (context) {

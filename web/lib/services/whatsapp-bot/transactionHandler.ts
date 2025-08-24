@@ -73,7 +73,7 @@ export class TransactionHandler {
       
       // Step 2.3: Send link to the user to the mini app on the funding page
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const fundingLink = `${baseUrl}/funding?amount=${context.amount}&recipient=${context.recipientPhone}&recipientWallet=${context.recipientWalletAddress}&sender=${phoneNumber}`;
+      const fundingLink = `${baseUrl}/funding?amount=${context.amount}&phone=${context.recipientPhone}`;
       
       await this.botService.sendMessage(phoneNumber, `Please complete your payment using this link: ${fundingLink}`);
       await this.botService.sendMessage(phoneNumber, "Once you complete the payment, the recipient will receive the funds automatically.");

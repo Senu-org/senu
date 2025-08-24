@@ -35,14 +35,8 @@ export class ConversationContextService {
       return null;
     }
 
-    // Update last activity and save back to store
-    const updatedContext = {
-      ...context,
-      lastActivity: Date.now()
-    };
-    this.contextStore.set(context.phoneNumber, updatedContext);
-    
-    return updatedContext;
+    // Don't update lastActivity here - let the webhook handle it
+    return context;
   }
 
   async setContext(context: ConversationContext): Promise<void> {
@@ -55,6 +49,14 @@ export class ConversationContextService {
     this.contextStore.set(context.phoneNumber, contextWithTimestamp);
     console.log(`Context saved for ${context.phoneNumber}, state: ${context.state}, store size: ${this.contextStore.size}`);
     console.log(`Store contents:`, Array.from(this.contextStore.keys()));
+  }
+
+  async updateContextActivity(phoneNumber: string): Promise<void> {
+    const context = this.contextStore.get(phoneNumber);
+    if (context) {
+      context.lastActivity = Date.now();
+      this.contextStore.set(phoneNumber, context);
+    }
   }
 
   async deleteContext(phoneNumber: string): Promise<void> {

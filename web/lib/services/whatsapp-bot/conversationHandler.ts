@@ -203,6 +203,11 @@ export class ConversationHandler {
     return context;
   }
 
+  // Update context activity in storage
+  async updateContextActivityInStorage(phoneNumber: string) {
+    await this.conversationContextService.updateContextActivity(phoneNumber);
+  }
+
   // Save context
   async saveContext(context: ConversationContext) {
     await this.conversationContextService.setContext(context);

@@ -106,10 +106,21 @@ export class IntentParser {
     }
     
     // Add more intent recognition logic here
-    // For now, if a message is a number, we'll assume it's an amount
-    if (!isNaN(parseFloat(lowerCaseMessage))) {
+    // Check if it's a phone number (starts with + and has digits, or just digits)
+    if (lowerCaseMessage.startsWith('+') && /^\+[0-9]{8,15}$/.test(lowerCaseMessage)) {
+      return 'text_input'; // Phone number
+    }
+    
+    // Check if it's just digits (could be phone number without +)
+    if (/^[0-9]{8,15}$/.test(lowerCaseMessage)) {
+      return 'text_input'; // Phone number without +
+    }
+    
+    // If it's a simple number (not a phone number), assume it's an amount
+    if (!isNaN(parseFloat(lowerCaseMessage)) && lowerCaseMessage.length < 8) {
       return 'amount_received';
     }
+    
     // If it's not a command and not a number, we'll assume it's a name or country for registration
     // This is a very simplified assumption and would need more sophisticated NLP for production
     if (lowerCaseMessage.length > 0) {
