@@ -36,9 +36,11 @@ export enum ErrorCodes {
 export interface User {
   id: string;
   phone: string; // WhatsApp number
-  name: string;
-  country: "CR" | "NI";
+  name?: string;
+  country?: "CR" | "NI";
   wallet_address: string;
+  wallet_address_external?: string;
+  type_wallet?: string;
   kyc_status: "pending" | "verified" | "rejected";
   created_at: Date;
   updated_at: Date;
@@ -75,9 +77,15 @@ export interface Transaction {
 
 export interface CustodialWallet {
   id: string;
-  phone: number;
-  wallet_address: string;
+  user_phone: number;
+  blockchain_address: string;
+  type_wallet: string;
   encrypterUserShare: string;
+  country?: string;
+  private_key_ref: string; // KMS reference
+  balance_usd: number;
+  nonce: number;
+  created_at: Date;
 }
 
 export interface WalletConnection {
