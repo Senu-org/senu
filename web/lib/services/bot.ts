@@ -1,22 +1,76 @@
-// Bot Service - centralized WhatsApp bot logic
+import twilio from 'twilio';
+
 export class BotService {
-  static async processWebhook(webhookData: any) {
-    // Implementation will be added here
-    throw new Error('Not implemented')
+  private client: twilio.Twilio;
+
+  constructor() {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+    if (!accountSid || !authToken) {
+      throw new Error('Twilio credentials are not set in environment variables.');
+    }
+
+    this.client = twilio(accountSid, authToken);
   }
 
-  static async parseIntent(message: string) {
-    // Implementation will be added here
-    throw new Error('Not implemented')
+  async sendMessage(to: string, message: string) {
+    try {
+      await this.client.messages.create({
+        from: 'whatsapp:+14155238886', // This should be your Twilio WhatsApp number
+        to: `whatsapp:${to}`,
+        body: message,
+      });
+      console.log(`Message sent to ${to}: ${message}`);
+    } catch (error) {
+      console.error(`Error sending message to ${to}:`, error);
+      throw error;
+    }
   }
 
-  static async sendMessage(phoneNumber: string, message: string) {
-    // Implementation will be added here
-    throw new Error('Not implemented')
+  async sendTemplatedMessage(to: string, templateName: string, templateData?: string[]) {
+    try {
+      await this.client.messages.create({
+        from: 'whatsapp:+14155238886', // This should be your Twilio WhatsApp number
+        to: `whatsapp:${to}`,
+        contentSid: templateName,
+        contentVariables: templateData ? JSON.stringify(templateData) : undefined,
+      });
+      console.log(`Templated message sent to ${to} using template ${templateName}`);
+    } catch (error) {
+      console.error(`Error sending templated message to ${to}:`, error);
+      throw error;
+    }
   }
+}
 
-  static async handleCommand(phoneNumber: string, command: string, params: any) {
-    // Implementation will be added here
-    throw new Error('Not implemented')
+export class IntentParser {
+  parse(message: string): string {
+    const lowerCaseMessage = message.toLowerCase().trim();
+
+    if (lowerCaseMessage.startsWith('/send')) {
+      return '/send';
+    } else if (lowerCaseMessage.startsWith('/status')) {
+      return '/status';
+    } else if (lowerCaseMessage.startsWith('/register')) {
+      return '/register';
+    } else if (lowerCaseMessage.startsWith('/confirm')) {
+      return '/confirm';
+    } else if (lowerCaseMessage.startsWith('/cancel')) {
+      return '/cancel';
+    }
+    // Add more intent recognition logic here
+    // For now, if a message is a number, we'll assume it's an amount
+    if (!isNaN(parseFloat(lowerCaseMessage))) {
+      return 'amount_received';
+    }
+    // If it's not a command and not a number, we'll assume it's a name or country for registration
+    // This is a very simplified assumption and would need more sophisticated NLP for production
+    if (lowerCaseMessage.length > 0) {
+      // This needs refinement based on the current conversation state
+      return 'text_input'; 
+    }
+
+    return 'unknown';
   }
 }

@@ -1,5 +1,4 @@
-import {parseEther,isAddress,parseGwei, http} from 'viem'
-import { WalletType } from "@getpara/server-sdk";
+import {parseEther,isAddress, http} from 'viem'
 import WalletService from './wallet'
 import { IWalletRepository } from '../interfaces/IWalletRepository';
 import dotenv from "dotenv";
@@ -50,7 +49,9 @@ export class TransactionService {
 
       // Create Para account and Viem client using shared Para instance
       const paraServer = this.paraManager.getParaServer();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const paraAccount = createParaAccount(paraServer as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const viemClient = createParaViemClient(paraServer as any, {
         account: paraAccount,
         chain: monadChain,
@@ -131,6 +132,7 @@ export class TransactionService {
       }
 
       // Create a new transaction with higher gas price for retry
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const newGasPrice = (originalTx.gasPrice || BigInt(0)) * BigInt(120) / BigInt(100); // 20% increase
       
       // Note: For retry, we would need the original sender's Para account
@@ -174,7 +176,14 @@ export class TransactionService {
     }
   }
 
-  static async getUserTransactions(userPhone: string, limit: number = 50): Promise<any[]> {
+  static async getUserTransactions(userPhone: string, limit: number = 50): Promise<Array<{
+    transactionId: string;
+    sender: string;
+    receiver: string;
+    amount: number;
+    status: string;
+    timestamp: string;
+  }>> {
     try {
       // TODO: Implement actual database query to get user transactions
       // For now, return empty array as placeholder

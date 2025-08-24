@@ -6,7 +6,9 @@ interface ReceiveMoneyProps {
   phoneNumber?: string | null;
 }
 
-export function ReceiveMoney({ phoneNumber }: ReceiveMoneyProps) {
+export function ReceiveMoney({ phoneNumber: _phoneNumber }: ReceiveMoneyProps) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _ = _phoneNumber; // Suppress unused variable warning
   return (
     <div className="min-h-screen">
       <AppHeader />

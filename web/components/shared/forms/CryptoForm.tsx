@@ -1,8 +1,14 @@
 'use client';
 
+interface CryptoFormData {
+  cryptoType: string;
+  walletAddress?: string;
+  network?: string;
+}
+
 interface CryptoFormProps {
   mode?: 'funding' | 'receiving';
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: CryptoFormData) => void;
   isLoading?: boolean;
 }
 
@@ -100,7 +106,7 @@ export function CryptoForm({ mode = 'funding', onSubmit, isLoading = false }: Cr
         <button 
           onClick={() => {
             // Collect form data (in real implementation, get from form state)
-            const formData = {
+            const formData: CryptoFormData = {
               cryptoType: 'bitcoin', // Mock data
               walletAddress: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
               network: 'mainnet'

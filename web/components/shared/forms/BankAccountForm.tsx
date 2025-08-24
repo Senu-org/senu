@@ -1,8 +1,16 @@
 'use client';
 
+interface BankAccountFormData {
+  accountNumber?: string;
+  bank?: string;
+  accountHolder?: string;
+  idNumber?: string;
+  amount?: number;
+}
+
 interface BankAccountFormProps {
   mode?: 'funding' | 'receiving';
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: BankAccountFormData) => void;
 }
 
 export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormProps) {

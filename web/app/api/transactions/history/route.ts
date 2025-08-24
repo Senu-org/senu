@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TransactionService } from '../../../../lib/services/transaction'
-import { AuthService } from '../../../../lib/services/auth'
-import type { ErrorCodes, ApiResponse, Transaction } from '../../../../lib/types'
+import { AuthService } from '@/lib/services/auth'
+import { TransactionService } from '@/lib/services/transaction'
+import { ApiResponse, ErrorCodes } from '@/lib/types'
 
 /**
  * GET /api/transactions/history - Get transaction history for authenticated user
@@ -28,8 +28,8 @@ export async function GET(request: NextRequest) {
     try {
       const decoded = await AuthService.validateToken(token)
       userPhone = decoded.phone
-    } catch (authError: any) {
-      const errorCode = authError.message as ErrorCodes
+    } catch (authError: unknown) {
+      const errorCode = authError instanceof Error ? authError.message as ErrorCodes : 'AUTH_ERROR' as ErrorCodes;
       return NextResponse.json<ApiResponse<never>>({
         success: false,
         error: {
@@ -66,40 +66,50 @@ export async function GET(request: NextRequest) {
     let filteredTransactions = transactions
     
     if (status) {
-      filteredTransactions = filteredTransactions.filter((tx: any) => tx.status === status)
+      filteredTransactions = filteredTransactions.filter((tx) => tx.status === status)
     }
     
     if (startDate) {
       const start = new Date(startDate)
-      filteredTransactions = filteredTransactions.filter((tx: any) => tx.created_at >= start)
+      filteredTransactions = filteredTransactions.filter((tx) => new Date(tx.timestamp) >= start)
     }
     
     if (endDate) {
       const end = new Date(endDate)
-      filteredTransactions = filteredTransactions.filter((tx: any) => tx.created_at <= end)
+      filteredTransactions = filteredTransactions.filter((tx) => new Date(tx.timestamp) <= end)
     }
 
     // Add summary statistics
     const summary = {
       total_transactions: filteredTransactions.length,
       total_sent: filteredTransactions
-        .filter((tx: any) => tx.sender_phone === userPhone)
-        .reduce((sum: number, tx: any) => sum + tx.amount_usd, 0),
+        .filter((tx) => tx.sender === userPhone)
+        .reduce((sum: number, tx) => sum + tx.amount, 0),
       total_received: filteredTransactions
-        .filter((tx: any) => tx.receiver_phone === userPhone)
-        .reduce((sum: number, tx: any) => sum + tx.amount_usd, 0),
-      completed_count: filteredTransactions.filter((tx: any) => tx.status === 'completed').length,
-      pending_count: filteredTransactions.filter((tx: any) => 
+        .filter((tx) => tx.receiver === userPhone)
+        .reduce((sum: number, tx) => sum + tx.amount, 0),
+      completed_count: filteredTransactions.filter((tx) => tx.status === 'completed').length,
+      pending_count: filteredTransactions.filter((tx) => 
         !['completed', 'failed'].includes(tx.status)
       ).length,
-      failed_count: filteredTransactions.filter((tx: any) => tx.status === 'failed').length
+      failed_count: filteredTransactions.filter((tx) => tx.status === 'failed').length
     }
 
     // Set cache headers
     const headers = new Headers()
     headers.set('Cache-Control', 'private, max-age=30') // 30 seconds cache
 
-    return NextResponse.json<ApiResponse<{ transactions: Transaction[], summary: typeof summary }>>({
+    return NextResponse.json<ApiResponse<{ 
+      transactions: Array<{
+        transactionId: string;
+        sender: string;
+        receiver: string;
+        amount: number;
+        status: string;
+        timestamp: string;
+      }>, 
+      summary: typeof summary 
+    }>>({
       success: true,
       data: {
         transactions: filteredTransactions,
@@ -110,7 +120,7 @@ export async function GET(request: NextRequest) {
       headers
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('GET /api/transactions/history error:', error)
 
     // Map known errors to appropriate HTTP status codes
@@ -119,8 +129,9 @@ export async function GET(request: NextRequest) {
       'INVALID_REQUEST': { status: 400, message: 'Invalid request parameters' }
     }
 
-    const mapping = errorMappings[error.message] || { status: 500, message: 'Internal server error' }
-    const errorCode = error.message as ErrorCodes || 'INTERNAL_SERVER_ERROR'
+    const errorMessage = error instanceof Error ? error.message : 'INTERNAL_SERVER_ERROR';
+    const mapping = errorMappings[errorMessage] || { status: 500, message: 'Internal server error' }
+    const errorCode = errorMessage as ErrorCodes || 'INTERNAL_SERVER_ERROR'
 
     return NextResponse.json<ApiResponse<never>>({
       success: false,

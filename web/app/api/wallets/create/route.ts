@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     await createWalletService.createWallet(telegramUserId);
     
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Wallet creation failed' }, { status: 500 })
   }
 }

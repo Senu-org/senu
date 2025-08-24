@@ -105,11 +105,11 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Registration error:', error)
 
     // Handle specific error types
-    if (error.message === 'INVALID_PHONE') {
+    if (error instanceof Error && error.message === 'INVALID_PHONE') {
       return NextResponse.json(
         { 
           success: false, 
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (error.message === 'USER_ALREADY_EXISTS') {
+    if (error instanceof Error && error.message === 'USER_ALREADY_EXISTS') {
       return NextResponse.json(
         { 
           success: false, 
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (error.message === 'USER_CREATION_FAILED') {
+    if (error instanceof Error && error.message === 'USER_CREATION_FAILED') {
       return NextResponse.json(
         { 
           success: false, 

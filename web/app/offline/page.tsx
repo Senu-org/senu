@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 export default function OfflinePage() {
   useEffect(() => {
@@ -81,12 +82,12 @@ export default function OfflinePage() {
             Volver Atrás
           </button>
 
-          <a
+          <Link
             href="/"
             className="block w-full bg-white hover:bg-gray-50 text-emerald-600 font-medium py-3 px-6 rounded-lg border border-emerald-600 transition-colors duration-200"
           >
             Ir al Inicio
-          </a>
+          </Link>
         </div>
 
         {/* Estado de conexión */}

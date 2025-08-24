@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { TransactionService } from '../../../../lib/services/transaction'
 import { AuthService } from '../../../../lib/services/auth'
 import SupabaseRepository from '../../../../lib/repository/SupabaseRepository'
-import type { SendTransactionRequest, ErrorCodes, ApiResponse, SendTransactionResponse } from '../../../../lib/types'
+import type { SendTransactionRequest, ErrorCodes, ApiResponse } from '../../../../lib/types'
 
 /**
  * POST /api/transactions/send - Create and initiate a new transaction
@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
     try {
       const decoded = await AuthService.validateToken(token)
       userPhone = decoded.phone
-    } catch (authError: any) {
-      const errorCode = authError.message as ErrorCodes
+    } catch (authError: unknown) {
+      const errorCode = authError instanceof Error ? authError.message as ErrorCodes : 'AUTH_ERROR' as ErrorCodes;
       return NextResponse.json<ApiResponse<never>>({
         success: false,
         error: {
@@ -120,6 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create transaction using TransactionService
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const transactionRequest: SendTransactionRequest = {
       receiver_phone,
       amount_usd,
@@ -136,12 +137,25 @@ export async function POST(request: NextRequest) {
     
     const result = await transactionService.createTransaction(senderPhone, receiverPhoneNumber, amount_usd.toString())
 
-    return NextResponse.json<ApiResponse<any>>({
+    return NextResponse.json<ApiResponse<{
+      transactionId: string;
+      sender: string;
+      receiver: string;
+      amount: number;
+      status: string;
+      timestamp: string;
+      blockNumber?: number | bigint;
+      gasUsed?: string;
+      effectiveGasPrice?: string;
+    }>>({
       success: true,
-      data: result
+      data: {
+        ...result,
+        amount: parseFloat(result.amount)
+      }
     }, { status: 201 })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('POST /api/transactions/send error:', error)
 
     // Map known errors to appropriate HTTP status codes
@@ -154,8 +168,9 @@ export async function POST(request: NextRequest) {
       'ONRAMP_SERVICE_UNAVAILABLE': { status: 503, message: 'Payment service temporarily unavailable' }
     }
 
-    const mapping = errorMappings[error.message] || { status: 500, message: 'Internal server error' }
-    const errorCode = error.message as ErrorCodes || 'INTERNAL_SERVER_ERROR'
+    const errorMessage = error instanceof Error ? error.message : 'INTERNAL_SERVER_ERROR';
+    const mapping = errorMappings[errorMessage] || { status: 500, message: 'Internal server error' }
+    const errorCode = errorMessage as ErrorCodes || 'INTERNAL_SERVER_ERROR'
 
     return NextResponse.json<ApiResponse<never>>({
       success: false,

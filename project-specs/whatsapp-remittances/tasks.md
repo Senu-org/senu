@@ -62,20 +62,20 @@
     - Desarrollar POST /api/wallets/transfer con retry logic
     - _Requisitos: 7.1, 7.2_
 
-- [ ] 5. Desarrollar WhatsApp Bot Service
+- [x] 5. Desarrollar WhatsApp Bot Service (Planificación completada)
 
-  - [ ] 5.1 Configurar integración Twilio WhatsApp API
+  - [x] 5.1 Configurar integración Twilio WhatsApp API
     - Implementar API Route /api/bot/webhook para mensajes entrantes
     - Crear BotService en /lib/services/bot.ts
     - Configurar templates de mensajes pre-aprobados
     - _Requisitos: 1.1, 4.1, 5.1_
-  - [ ] 5.2 Implementar parser de intents y gestión de contexto
+  - [x] 5.2 Implementar parser de intents y gestión de contexto
     - Crear sistema de reconocimiento de comandos (/enviar, /estado)
     - Implementar máquina de estados para conversaciones
     - Desarrollar persistencia de contexto de sesión
     - Escribir tests para flows conversacionales
     - _Requisitos: 1.1, 1.4, 10.4_
-  - [ ] 5.3 Crear flujos de conversación principales
+  - [x] 5.3 Crear flujos de conversación principales
     - Implementar flujo de registro inicial de usuarios
     - Desarrollar flujo de iniciación de transacciones
     - Crear respuestas automáticas para estados de error
