@@ -3,11 +3,6 @@ import path from "path";
 import { IWalletRepository } from "../interfaces/IWalletRepository";
 import { CustodialWallet } from "../types";
 
-interface WalletData extends CustodialWallet {
-  phoneNumber?: number;
-  encryptedUserShare?: string;
-}
-
 class JSONRepository implements IWalletRepository{    
         private readonly filePath: string;     
 
@@ -46,27 +41,27 @@ class JSONRepository implements IWalletRepository{
 
         async getUserShareByPhoneNumber(phoneNumber: number): Promise<string | null> {
             const wallets = await this.readWallets();
-            const wallet = wallets.find((w: WalletData) => w.phoneNumber === phoneNumber);
-            if( wallet?.encryptedUserShare) console.log('Found wallet share:');
+            const wallet = wallets.find((w: CustodialWallet) => w.phone === phoneNumber);
+            if( wallet?.encrypterUserShare) console.log('Found wallet share:');
             else console.log('No encrypted share found for this wallet');
-            return wallet?.encryptedUserShare || null;
+            return wallet?.encrypterUserShare || null;
         }
 
         async getIdByPhoneNumber(phoneNumber: number): Promise<string | null> {
             const wallets = await this.readWallets();
-            const wallet = wallets.find((w: WalletData) => w.phoneNumber === phoneNumber);
+            const wallet = wallets.find((w: CustodialWallet) => w.phone === phoneNumber);
             console.log('Found wallet id:', wallet?.id);
             return wallet ? wallet.id : null;
         }
 
         async getAddressByPhoneNumber(phoneNumber: number): Promise<string | null> {
             const wallets = await this.readWallets();
-            const wallet = wallets.find((w: WalletData) => w.phoneNumber === phoneNumber);
+            const wallet = wallets.find((w: CustodialWallet) => w.phone === phoneNumber);
             console.log('Found wallet id:', wallet?.id);
-            return wallet ? wallet.blockchain_address : null;
+            return wallet ? wallet.wallet_address : null;
         }
         
-        private async writeWallets(wallets: WalletData[]): Promise<void> {
+        private async writeWallets(wallets: CustodialWallet[]): Promise<void> {
                 try {        
                     await fs.writeFile(this.filePath, JSON.stringify(wallets, null, 2));        
                 } catch (error){        
@@ -75,12 +70,12 @@ class JSONRepository implements IWalletRepository{
                 }    
             }      
             
-        private async readWallets(): Promise<WalletData[]> {
+        private async readWallets(): Promise<CustodialWallet[]> {
             await this.ensureFileExists();
             try {      
                     const data = await fs.readFile(this.filePath, 'utf-8');    
                     const wallets = JSON.parse(data);          
-                    return wallets.map((wallet: WalletData) => ({...wallet}));    
+                    return wallets.map((wallet: CustodialWallet) => ({...wallet}));    
                 }catch (error) {    
                     console.error('Error reading wallets file:', error);
                     return [];     
