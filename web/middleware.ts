@@ -16,6 +16,7 @@ const PROTECTED_PATHS = [
 // Paths that are completely public (no rate limiting)
 const PUBLIC_PATHS = [
   '/api/health',
+  '/api/bot/webhook',
   '/',
   '/manifest.json',
   '/_next',
