@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { ReactNode, createContext, useContext, useState } from 'react';
 import { walletKitService, WalletConnection } from '@/lib/services/walletkit';
 
 interface WalletKitContextType {
