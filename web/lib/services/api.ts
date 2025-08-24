@@ -1,6 +1,6 @@
 import { config } from '../config/env';
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   status: number;

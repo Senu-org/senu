@@ -13,6 +13,7 @@ interface CompletionAnimationProps {
   redirectTo?: string;
   isLoading?: boolean;
   loadingMessage?: string;
+  showDismissButton?: boolean;
 }
 
 export function CompletionAnimation({ 
@@ -22,10 +23,12 @@ export function CompletionAnimation({
   subtitle = "Tu método de pago ha sido configurado exitosamente",
   redirectTo,
   isLoading = false,
-  loadingMessage = "Procesando..."
+  loadingMessage = "Procesando...",
+  showDismissButton = false
 }: CompletionAnimationProps) {
   const [animationStep, setAnimationStep] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [showDismiss, setShowDismiss] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -48,19 +51,24 @@ export function CompletionAnimation({
       const timer4 = setTimeout(() => {
         setAnimationStep(4);
         
-        // Wait for animation to fully complete before calling onComplete and redirecting
+        // Wait for animation to fully complete before showing dismiss button or redirecting
         setTimeout(() => {
           onComplete?.();
           
-          // Handle redirect if specified - only after animation is complete
-          if (redirectTo) {
-            if (redirectTo.startsWith('http://') || redirectTo.startsWith('https://')) {
-              window.location.href = redirectTo;
-            } else {
-              router.push(redirectTo);
+          // If dismiss button is enabled, show it instead of auto-redirecting
+          if (showDismissButton) {
+            setShowDismiss(true);
+          } else {
+            // Handle redirect if specified - only after animation is complete
+            if (redirectTo) {
+              if (redirectTo.startsWith('http://') || redirectTo.startsWith('https://')) {
+                window.location.href = redirectTo;
+              } else {
+                router.push(redirectTo);
+              }
             }
           }
-        }, 1500); // Wait for animation to fully complete before redirect
+        }, 1500); // Wait for animation to fully complete before showing dismiss or redirect
       }, 2500); // Complete animation sequence timing
 
       return () => {
@@ -204,6 +212,32 @@ export function CompletionAnimation({
                 </div>
               )}
             </div>
+
+            {/* Dismiss Button - Only shown when showDismissButton is true and animation is complete */}
+            {showDismissButton && showDismiss && (
+              <div 
+                className={`
+                  mt-6 transform transition-all duration-500 ease-out
+                  ${showDismiss ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}
+                `}
+              >
+                <button
+                  onClick={() => {
+                    // Handle redirect when dismiss button is clicked
+                    if (redirectTo) {
+                      if (redirectTo.startsWith('http://') || redirectTo.startsWith('https://')) {
+                        window.location.href = redirectTo;
+                      } else {
+                        router.push(redirectTo);
+                      }
+                    }
+                  }}
+                  className="w-full bg-purple-600 text-white font-semibold py-3 px-6 rounded-2xl hover:bg-purple-700 active:bg-purple-800 transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                >
+                  Continuar
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>

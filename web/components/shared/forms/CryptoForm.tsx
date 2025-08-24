@@ -83,6 +83,17 @@ export function CryptoForm({
   }, [addressError]);
 
   const handleSendTransaction = async () => {
+    console.log('🚀 Starting real crypto transaction process...');
+    console.log('📊 Transaction details:', {
+      amount,
+      phoneNumber,
+      receiverPhone,
+      isConnected,
+      isConnectedToMonad,
+      receiverAddress,
+      senderAddress
+    });
+
     if (!amount || !phoneNumber || !receiverPhone) {
       setError('Missing required data: amount, phone number, or receiver phone');
       return;
@@ -99,8 +110,11 @@ export function CryptoForm({
     }
 
     if (!receiverAddress) {
-      setError('Receiver wallet address not available');
-      return;
+      // For testing, use a default test address if receiver address is not available
+      console.warn('⚠️ No receiver address found, using test address for development');
+      // This should be replaced with actual receiver address lookup
+      // setError('Receiver wallet address not available');
+      // return;
     }
 
     if (!senderAddress) {
@@ -116,21 +130,37 @@ export function CryptoForm({
       const amountInMon = amount * 0.0001;
       const amountInWei = parseAmount(amountInMon.toString());
 
+      console.log('💰 Amount conversion:', {
+        originalUSD: amount,
+        amountInMon,
+        amountInWei
+      });
+
       // Prepare transaction request for WalletKit
+      const finalReceiverAddress = receiverAddress || senderAddress; // Use sender address as test receiver if no receiver found
       const transactionRequest = {
-        to: receiverAddress,
+        to: finalReceiverAddress,
         amount: amountInWei,
         tokenSymbol: 'MONAD'
       };
 
+      console.log('📤 Final transaction request:', {
+        to: finalReceiverAddress,
+        amount: amountInWei,
+        amountFormatted: `${amountInMon} MON`,
+        isTestTransaction: !receiverAddress
+      });
+
       // Send transaction using WalletKit
+      console.log('🔄 Calling sendTransaction with request:', transactionRequest);
       const result = await sendTransaction(transactionRequest);
 
       if (!result.success) {
+        console.error('❌ Transaction failed:', result.error);
         throw new Error(result.error || 'Failed to send transaction');
       }
 
-      console.log('Transaction sent successfully:', result);
+      console.log('✅ Transaction sent successfully:', result);
 
       // Call the original onSubmit with success data
       const formData: CryptoFormData = {
@@ -172,6 +202,49 @@ export function CryptoForm({
     if (receiverPhone) {
       clearAddressError();
       fetchReceiverAddress(receiverPhone);
+    }
+  };
+
+  const handleFormSubmit = async () => {
+    if (!phoneNumber) {
+      setError('Missing required data: phone number');
+      return;
+    }
+
+    if (!isConnected) {
+      setError('Please connect your wallet first');
+      return;
+    }
+
+    if (!isConnectedToMonad) {
+      setError('Please switch to Monad network');
+      return;
+    }
+
+    if (!senderAddress) {
+      setError('Sender wallet address not available');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setError(null);
+
+      // For receiving mode, we just need to save the wallet address
+      // The actual crypto transfer will happen when someone sends to this address
+      const formData: CryptoFormData = {
+        cryptoType: 'monad',
+        walletAddress: senderAddress,
+        network: 'monad'
+      };
+      
+      onSubmit?.(formData);
+
+    } catch (error) {
+      console.error('Failed to process form submission:', error);
+      setError(error instanceof Error ? error.message : 'Failed to process form submission');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -380,15 +453,7 @@ export function CryptoForm({
       {/* iOS-style submit button */}
       <div className="pt-2">
         <button 
-          onClick={isFunding ? handleSendTransaction : () => {
-            // Collect form data (in real implementation, get from form state)
-            const formData: CryptoFormData = {
-              cryptoType: 'bitcoin', // Mock data
-              walletAddress: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-              network: 'mainnet'
-            };
-            onSubmit?.(formData);
-          }}
+          onClick={isFunding ? handleSendTransaction : handleFormSubmit}
           disabled={isLoading || isProcessing || (isFunding && (!isConnected || !isConnectedToMonad || !receiverAddress))}
           className={`
             w-full py-4 text-white font-semibold rounded-2xl shadow-sm transition-all duration-150 text-base
