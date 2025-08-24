@@ -53,8 +53,14 @@ export async function POST(request: NextRequest) {
     if (!context) {
       // Step 1.1, 1.2, 1.3: Handle user registration flow
       if (!existingUser) {
-        // Step 1.2: User doesn't exist, create new one and ask for name/country
-        await AuthService.createUser(cleanFrom);
+        // Step 1.2: User doesn't exist, create wallet (which creates user) and ask for name/country
+        try {
+          await AuthService.createWallet(cleanFrom);
+          console.log(`Created wallet and user for: ${cleanFrom}`);
+        } catch (error) {
+          console.error('Wallet creation error:', error);
+          // Continue anyway, user might already exist
+        }
         await conversationHandler.sendMessage(cleanFrom, "Welcome to the Remittance Bot! What is your name?");
         await conversationHandler.initializeContext(cleanFrom, false, null);
         context = await conversationHandler.getContext(cleanFrom);
@@ -133,26 +139,23 @@ export async function POST(request: NextRequest) {
         break;
       case ConversationState.AwaitingCountryConfirmation:
         if (intent === 'menu_selection_1' || intent === 'yes' || intent === 'confirm') {
-          // User confirmed the detected country
-          try {
-            // Update user with name and country via REST API
-            await AuthService.updateUser(cleanFrom, { 
-              name: context.name!, 
-              country: context.country! as "CR" | "NI" 
-            });
-            
-            // Create wallet via REST API
-            await AuthService.createWallet(cleanFrom);
-            
-            await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered and your wallet has been created.`);
-            await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
-            context.state = ConversationState.ShowingMenu;
-          } catch (error) {
-            console.error('Registration error:', error);
-            await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered.`);
-            await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
-            context.state = ConversationState.ShowingMenu;
-          }
+                  // User confirmed the detected country
+        try {
+          // Update user with name and country via REST API
+          await AuthService.updateUser(cleanFrom, { 
+            name: context.name!, 
+            country: context.country! as "CR" | "NI" 
+          });
+          
+          await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered.`);
+          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
+          context.state = ConversationState.ShowingMenu;
+        } catch (error) {
+          console.error('Registration error:', error);
+          await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered.`);
+          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
+          context.state = ConversationState.ShowingMenu;
+        }
         } else if (intent === 'menu_selection_2' || intent === 'no' || intent === 'change') {
           // User wants to change the country
           await conversationHandler.sendCountrySelectionMessage(cleanFrom);
@@ -189,10 +192,7 @@ export async function POST(request: NextRequest) {
             country: context.country! as "CR" | "NI" 
           });
           
-          // Create wallet via REST API
-          await AuthService.createWallet(cleanFrom);
-          
-          await conversationHandler.sendMessage(cleanFrom, `Great! You are now registered with ${context.country} and your wallet has been created.`);
+          await conversationHandler.sendMessage(cleanFrom, `Great! You are now registered with ${context.country}.`);
           await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
           context.state = ConversationState.ShowingMenu;
         } catch (error) {

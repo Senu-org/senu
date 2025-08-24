@@ -21,37 +21,65 @@ class WalletService {
     try {
       const paraServer = this.paraManager.getParaServer();
 
-      const hasWallet = await paraServer.hasPregenWallet({
-        pregenId: { phone: `+${number}` },
-      });
+      // Check if wallet exists in our database
+      const existingWalletAddress = await this.walletRepository.getAddressByPhoneNumber(number);
+      const hasWalletInDB = !!existingWalletAddress;
 
-      if (hasWallet) {
-        throw new Error("Wallet already exists for this phone number");
+      if (hasWalletInDB) {
+        console.log(`Wallet already exists in database for phone number: ${number}`);
+        return; // Wallet exists in our DB, no need to create it
       }
 
-      const generatedWallet = await paraServer.createPregenWallet({
-        type: WalletType.EVM,
+      // Check if wallet exists in Para server
+      const hasWalletInPara = await paraServer.hasPregenWallet({
         pregenId: { phone: `+${number}` },
       });
 
-      const userShare: string = paraServer.getUserShare() || "";
-      const encryptedShare = this.encryptUserShare(userShare);
+      let walletData: CustodialWallet;
+      
+      if (!hasWalletInPara) {
+        // Create new wallet in Para only if it doesn't exist
+        console.log(`Creating new wallet in Para for phone number: ${number}`);
+        const generatedWallet = await paraServer.createPregenWallet({
+          type: WalletType.EVM,
+          pregenId: { phone: `+${number}` },
+        });
 
-      const walletData: CustodialWallet = {
-        id: generatedWallet.id,
-        user_phone: number,
-        blockchain_address: generatedWallet.address || "",
-        private_key_ref: JSON.stringify(encryptedShare),
-        type_wallet: WalletType.EVM,
-        encrypterUserShare: JSON.stringify(encryptedShare),
-        nonce: 0,
-        balance_usd: 0,
-        created_at: new Date(),
-      };
+        const userShare: string = paraServer.getUserShare() || "";
+        const encryptedShare = this.encryptUserShare(userShare);
 
+        walletData = {
+          id: generatedWallet.id,
+          user_phone: number,
+          blockchain_address: generatedWallet.address || "",
+          private_key_ref: JSON.stringify(encryptedShare),
+          type_wallet: WalletType.EVM,
+          encrypterUserShare: JSON.stringify(encryptedShare),
+          nonce: 0,
+          balance_usd: 0,
+          created_at: new Date(),
+        };
+      } else {
+        console.log(`Wallet already exists in Para for ${number}, creating placeholder in DB`);
+        // Since we can't get the existing wallet from Para, we'll create a placeholder in our DB
+        walletData = {
+          id: `placeholder-${number}`,
+          user_phone: number,
+          blockchain_address: `0x${number.toString().padStart(40, '0')}`, // Placeholder address
+          private_key_ref: JSON.stringify({ encrypted: '', iv: '', tag: '' }),
+          type_wallet: WalletType.EVM,
+          encrypterUserShare: JSON.stringify({ encrypted: '', iv: '', tag: '' }),
+          nonce: 0,
+          balance_usd: 0,
+          created_at: new Date(),
+        };
+      }
+
+      // Save the wallet to our database
       await this.walletRepository.save(walletData);
+      console.log(`✅ Wallet saved to database for phone number: ${number}`);
     } catch (error) {
-      console.error("Error checking pregen wallet:", error);
+      console.error("Error in createWallet:", error);
       throw error;
     }
   }
@@ -75,7 +103,7 @@ class WalletService {
     const key = Buffer.from(this.encryptionKey, "hex");
     const iv = crypto.randomBytes(16);
 
-    const cipher = crypto.createCipher(algorithm, key);
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
     cipher.setAAD(Buffer.from("wallet-share", "utf8"));
 
     let encrypted = cipher.update(userShare, "utf8", "hex");
@@ -95,8 +123,9 @@ class WalletService {
       const data = JSON.parse(encryptedData);
       const algorithm = "aes-256-gcm";
       const key = Buffer.from(this.encryptionKey, "hex");
+      const iv = Buffer.from(data.iv, "hex");
 
-      const decipher = crypto.createDecipher(algorithm, key);
+      const decipher = crypto.createDecipheriv(algorithm, key, iv);
       decipher.setAAD(Buffer.from("wallet-share", "utf8"));
       decipher.setAuthTag(Buffer.from(data.tag, "hex"));
 

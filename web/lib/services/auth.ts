@@ -39,29 +39,7 @@ export class AuthService {
     }
   }
 
-  /**
-   * Create a new user via REST API
-   */
-  static async createUser(phoneNumber: string, name?: string, country?: string): Promise<any | null> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/users/${phoneNumber}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, country }),
-      });
 
-      if (!response.ok) {
-        throw new Error(`Failed to create user: ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error creating user:', error);
-      return null;
-    }
-  }
 
   /**
    * Update user data via REST API
@@ -108,9 +86,10 @@ export class AuthService {
         const updated = await this.updateUser(phoneNumber, { name, country });
         return !!updated;
       } else {
-        // Create new user
-        const created = await this.createUser(phoneNumber, name, country);
-        return !!created;
+        // Create wallet (which creates user) and then update with name/country
+        await this.createWallet(phoneNumber);
+        const updated = await this.updateUser(phoneNumber, { name, country });
+        return !!updated;
       }
     } catch (error) {
       console.error('Error registering user:', error);
@@ -123,6 +102,7 @@ export class AuthService {
    */
   static async createWallet(phoneNumber: string): Promise<boolean> {
     try {
+      console.log(`Creating wallet for phone number: ${phoneNumber} in the url ${this.baseUrl}/api/wallets/create`);
       const response = await fetch(`${this.baseUrl}/api/wallets/create`, {
         method: 'POST',
         headers: {

@@ -9,9 +9,17 @@ export async function POST(request: NextRequest) {
     const telegramUserId = phoneNumber; 
     const walletRepository = new SupabaseRepository();
     const createWalletService = new WalletService(walletRepository);
-    await createWalletService.createWallet(telegramUserId);
     
-    return NextResponse.json({ success: true })
+    try {
+      await createWalletService.createWallet(telegramUserId);
+      return NextResponse.json({ success: true, message: 'Wallet created or already exists' })
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('already exists')) {
+        // Wallet already exists, this is not an error
+        return NextResponse.json({ success: true, message: 'Wallet already exists' })
+      }
+      throw error; // Re-throw other errors
+    }
   } catch (error) {
     console.error('Wallet creation error:', error);
     return NextResponse.json({ error: 'Wallet creation failed' }, { status: 500 })

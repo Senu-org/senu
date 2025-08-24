@@ -27,8 +27,7 @@ export class TransactionHandler {
       const recipientUser = await AuthService.getUserByPhone(recipientPhone);
       
       if (!recipientUser) {
-        // Step 2.1: Recipient doesn't exist, create wallet
-        await AuthService.createUser(recipientPhone);
+        // Step 2.1: Recipient doesn't exist, create wallet (which creates user)
         await AuthService.createWallet(recipientPhone);
         console.log(`Created new user and wallet for recipient: ${recipientPhone}`);
       } else if (!recipientUser.wallet_address) {

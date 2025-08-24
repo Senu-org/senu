@@ -13,7 +13,7 @@ When a user talks to the bot, it follows these steps:
 1. **Get user data** via `GET /api/users/[phone]`
 2. **Handle different scenarios:**
    - **1.1**: If user exists but is missing name or country → Ask for missing data and update via `PUT /api/users/[phone]`
-   - **1.2**: If user doesn't exist → Create new user via `POST /api/users/[phone]` and then ask for name/country
+   - **1.2**: If user doesn't exist → Create wallet via `POST /api/wallets/create` (which creates user) and then ask for name/country
    - **1.3**: If user exists and has all data → Continue to menu
 
 ### 2. Transaction Flow
@@ -22,7 +22,7 @@ When a user sends a transaction to another user:
 
 1. **Get recipient information** via `GET /api/users/[phone]`
 2. **Handle recipient scenarios:**
-   - **2.1**: If recipient doesn't exist → Create wallet via `POST /api/wallets/create`
+   - **2.1**: If recipient doesn't exist → Create wallet via `POST /api/wallets/create` (which creates user)
    - **2.2**: If recipient exists → Get wallet address
    - **2.3**: Send link to user to the mini app on the funding page
 
@@ -31,13 +31,12 @@ When a user sends a transaction to another user:
 ### Users API (`/api/users/[phone]`)
 
 - `GET` - Retrieve user data
-- `POST` - Create new user
 - `PUT` - Update user data (name, country, wallet_address_external, type_wallet)
 - `PATCH` - Partial update user data
 
 ### Wallets API (`/api/wallets/create`)
 
-- `POST` - Create wallet for user
+- `POST` - Create wallet for user (also creates user if doesn't exist)
 
 ## Conversation States
 
@@ -79,3 +78,9 @@ The system includes comprehensive error handling:
 - Invalid amounts
 
 All errors are logged and appropriate messages are sent to users.
+
+## Key Changes
+
+- **User creation is handled by wallet creation** - The `POST /api/wallets/create` endpoint creates both the wallet and user record
+- **No separate user creation endpoint** - Users are created automatically when wallets are created
+- **Simplified flow** - Reduces API calls and potential race conditions

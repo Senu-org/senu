@@ -58,14 +58,10 @@ export async function POST(
 
     const repo = new SupabaseRepository();
     
-    // Create user with minimal data - provide temporary wallet address
-    const tempWalletAddress = `0x${numericPhone.toString().padStart(40, '0')}`; // Temporary address based on phone
-    
-    // Use updateUser with upsert behavior (it will create if doesn't exist)
-    const createdUser = await repo.updateUser(numericPhone, {
+    // Create user with minimal data using the new createUser method
+    const createdUser = await repo.createUser(numericPhone, {
       name: body.name || undefined,
       country: body.country || undefined,
-      wallet_address: tempWalletAddress, // Temporary wallet address
     });
 
     if (!createdUser) {
