@@ -1,4 +1,7 @@
 export const config = {
+  api: {
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || '',
+  },
   whatsapp: {
     number: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER,
     getWhatsAppUrl: (message: string) => {

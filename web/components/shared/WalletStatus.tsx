@@ -1,92 +1,43 @@
 'use client';
 
-import { useAppKit, useAppKitAccount, useAppKitBalance, useAppKitNetwork, useDisconnect } from '@reown/appkit/react';
-import { useState, useEffect } from 'react';
+import { useWalletKit } from '@/components/providers/WalletKitProvider';
 
 export function WalletStatus() {
-  // AppKit hooks
-  const { open, close } = useAppKit();
-  const { address, isConnected, status } = useAppKitAccount();
-  const { fetchBalance } = useAppKitBalance();
-  const { chainId, switchNetwork } = useAppKitNetwork();
-  const { disconnect: disconnectWallet } = useDisconnect();
-
-  // Local state
-  const [balance, setBalance] = useState<string>('0');
-  const [isLoading, setIsLoading] = useState(false);
+  // WalletKit hooks
+  const {
+    isConnected,
+    address,
+    balance,
+    chainId,
+    isConnectedToMonad,
+    connect,
+    disconnect,
+    switchToMonad,
+    refreshBalance,
+    modalOpen,
+    openModal,
+    closeModal
+  } = useWalletKit();
 
   // Monad chain ID
   const MONAD_CHAIN_ID = 10143;
-  const isConnectedToMonad = chainId === MONAD_CHAIN_ID;
 
-  // Fetch balance when connected
-  useEffect(() => {
-    if (isConnected && address) {
-      fetchBalanceAndUpdate();
-    } else {
-      setBalance('0');
-    }
-  }, [isConnected, address]);
-
-  const fetchBalanceAndUpdate = async () => {
-    try {
-      setIsLoading(true);
-      const balanceResult = await fetchBalance();
-      console.log('Balance result:', balanceResult); // Debug log
-      
-      if (balanceResult.isSuccess && balanceResult.data) {
-        // The balance is already formatted correctly from the API
-        const balanceData = balanceResult.data;
-        
-        if (typeof balanceData === 'object' && balanceData.balance) {
-          // Handle the object format: { balance: "0.2", symbol: "MONAD" }
-          setBalance(balanceData.balance);
-        } else if (typeof balanceData === 'string') {
-          // Handle string format directly
-          setBalance(balanceData);
-        } else {
-          // Fallback to converting from wei
-          let balanceValue: number;
-          
-          if (typeof balanceData === 'bigint') {
-            balanceValue = Number(balanceData);
-          } else {
-            balanceValue = Number(balanceData);
-          }
-          
-          // Convert from wei to MONAD (18 decimals)
-          const balanceInMonad = balanceValue / Math.pow(10, 18);
-          setBalance(balanceInMonad.toString());
-        }
-      } else {
-        setBalance('0');
-      }
-    } catch (error) {
-      console.error('Failed to fetch balance:', error);
-      setBalance('0');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleConnect = () => {
+    connect();
   };
 
-  const connect = () => {
-    open();
-  };
-
-  const disconnect = async () => {
+  const handleDisconnect = async () => {
     try {
-      await disconnectWallet();
-      setBalance('0');
+      await disconnect();
     } catch (error) {
       console.error('Failed to disconnect:', error);
     }
   };
 
-  const switchToMonad = async () => {
+  const handleSwitchToMonad = async () => {
     try {
       if (chainId !== MONAD_CHAIN_ID) {
-        // Open the modal to let user switch networks manually
-        open();
+        await switchToMonad();
       }
     } catch (error) {
       console.error('Failed to switch to Monad:', error);
@@ -127,15 +78,10 @@ export function WalletStatus() {
               <span className="text-sm font-medium text-gray-700">Balance:</span>
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-semibold text-gray-900">
-                  {isLoading ? (
-                    <span className="text-gray-500">Loading...</span>
-                  ) : (
-                    `${parseFloat(balance || '0').toFixed(4)} MONAD`
-                  )}
+                  {balance ? `${parseFloat(balance).toFixed(4)} MONAD` : '0.0000 MONAD'}
                 </span>
                 <button
-                  onClick={fetchBalanceAndUpdate}
-                  disabled={isLoading}
+                  onClick={refreshBalance}
                   className="text-xs text-purple-600 hover:text-purple-700 disabled:text-gray-400"
                 >
                   ↻
@@ -154,7 +100,7 @@ export function WalletStatus() {
           <div className="flex space-x-2">
             {!isConnectedToMonad && (
               <button
-                onClick={() => switchToMonad()}
+                onClick={handleSwitchToMonad}
                 className="flex-1 py-2 px-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
               >
                 Switch to Monad
@@ -162,7 +108,7 @@ export function WalletStatus() {
             )}
             
             <button
-              onClick={() => disconnect()}
+              onClick={handleDisconnect}
               className="flex-1 py-2 px-3 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
             >
               Disconnect
