@@ -29,14 +29,14 @@
     - Configurar Row Level Security policies básicas
     - _Requisitos: 1.3, 7.1, 9.3_
 
-- [ ] 3. Desarrollar servicios de autenticación y gestión de usuarios
+- [x] 3. Desarrollar servicios de autenticación y gestión de usuarios
 
-  - [] 3.1 Implementar Auth Service
+  - [x] 3.1 Implementar Auth Service
     - Crear API Route /api/auth/register para registro por número telefónico
     - Implementar AuthService en /lib/services/auth.ts
     - Configurar JWT token generation y validation
     - _Requisitos: 1.1, 1.2, 1.4_
-  - [ ] 3.2 Crear middleware de autenticación
+  - [x] 3.2 Crear middleware de autenticación
     - Implementar JWT verification en Next.js middleware
     - Configurar rate limiting por número telefónico
     - Añadir logging de requests autenticados
