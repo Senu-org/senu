@@ -4,9 +4,10 @@ import { AppHeader } from '../shared';
 
 interface FundingProps {
   phoneNumber?: string | null;
+  amount?: number | null;
 }
 
-export function Funding({ phoneNumber }: FundingProps) {
+export function Funding({ phoneNumber, amount }: FundingProps) {
   return (
     <div className="min-h-screen">
       <AppHeader />
@@ -23,7 +24,7 @@ export function Funding({ phoneNumber }: FundingProps) {
           
                            {/* Methods section */}
                  <div className="px-4 pb-8">
-                   <FundingMethods phoneNumber={phoneNumber} />
+                   <FundingMethods phoneNumber={phoneNumber} amount={amount} />
                  </div>
         </div>
       </main>

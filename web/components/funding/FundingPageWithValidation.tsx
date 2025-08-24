@@ -10,11 +10,13 @@ export function FundingPageWithValidation() {
   const searchParams = useSearchParams();
   const [isValidating, setIsValidating] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [amount, setAmount] = useState<number | null>(null);
 
   useEffect(() => {
     const phone = searchParams.get('phone') || searchParams.get('telephone');
+    const amount = searchParams.get('amount');
     
-    if (!phone) {
+    if (!phone || !amount) {
       // No phone number provided, redirect to home
       router.replace('/');
       return;
@@ -31,6 +33,7 @@ export function FundingPageWithValidation() {
     // Valid phone number
     setPhoneNumber(phone);
     setIsValidating(false);
+    setAmount(Number(amount));
   }, [searchParams, router]);
 
   // Show loading modal while validating
@@ -90,5 +93,5 @@ export function FundingPageWithValidation() {
   }
 
   // Render the funding page if validation passed
-  return <Funding phoneNumber={phoneNumber} />;
+  return <Funding phoneNumber={phoneNumber} amount={amount} />;
 }
