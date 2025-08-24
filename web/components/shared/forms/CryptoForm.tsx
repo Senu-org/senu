@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useWalletKit } from '@/components/providers/WalletKitProvider';
+import { useUserAddress } from '../../../hooks/useUserAddress';
 
 interface CryptoFormData {
   cryptoType: string;
@@ -28,6 +30,29 @@ export function CryptoForm({
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // WalletKit integration
+  const {
+    isConnected,
+    address: senderAddress,
+    balance,
+    isConnectedToMonad,
+    connect,
+    sendTransaction,
+    switchToMonad,
+    isValidAddress,
+    formatAmount,
+    parseAmount
+  } = useWalletKit();
+
+  // User address hook
+  const {
+    receiverAddress,
+    isLoading: isLoadingReceiver,
+    error: addressError,
+    fetchReceiverAddress,
+    clearError: clearAddressError
+  } = useUserAddress();
+  
   const isFunding = mode === 'funding';
   
   const title = isFunding ? 'Pago con Criptomonedas' : 'Recibir Criptomonedas';
@@ -43,9 +68,43 @@ export function CryptoForm({
     ? 'bg-purple-500 hover:bg-purple-600' 
     : 'bg-purple-500 hover:bg-purple-600';
 
+  // Fetch receiver address when receiverPhone changes
+  useEffect(() => {
+    if (receiverPhone && isFunding) {
+      fetchReceiverAddress(receiverPhone);
+    }
+  }, [receiverPhone, isFunding, fetchReceiverAddress]);
+
+  // Combine errors
+  useEffect(() => {
+    if (addressError) {
+      setError(addressError);
+    }
+  }, [addressError]);
+
   const handleSendTransaction = async () => {
     if (!amount || !phoneNumber || !receiverPhone) {
       setError('Missing required data: amount, phone number, or receiver phone');
+      return;
+    }
+
+    if (!isConnected) {
+      setError('Please connect your wallet first');
+      return;
+    }
+
+    if (!isConnectedToMonad) {
+      setError('Please switch to Monad network');
+      return;
+    }
+
+    if (!receiverAddress) {
+      setError('Receiver wallet address not available');
+      return;
+    }
+
+    if (!senderAddress) {
+      setError('Sender wallet address not available');
       return;
     }
 
@@ -53,39 +112,30 @@ export function CryptoForm({
       setIsProcessing(true);
       setError(null);
 
-      // Convert amount to MON (1 amount = 0.0001 MON)
+      // Convert amount to MON (1 USD = 0.0001 MON)
       const amountInMon = amount * 0.0001;
+      const amountInWei = parseAmount(amountInMon.toString());
 
-      // Prepare transaction request
+      // Prepare transaction request for WalletKit
       const transactionRequest = {
-        receiver_phone: receiverPhone,
-        amount_usd: amount,
-        onramp_provider: 'crypto',
-        sender_phone: phoneNumber
+        to: receiverAddress,
+        amount: amountInWei,
+        tokenSymbol: 'MONAD'
       };
 
-      // Call the transaction API without authentication
-      const response = await fetch('/api/transactions/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(transactionRequest)
-      });
+      // Send transaction using WalletKit
+      const result = await sendTransaction(transactionRequest);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to send transaction');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to send transaction');
       }
 
-      const result = await response.json();
-      
       console.log('Transaction sent successfully:', result);
 
       // Call the original onSubmit with success data
       const formData: CryptoFormData = {
         cryptoType: 'monad',
-        walletAddress: result.data?.sender || '',
+        walletAddress: senderAddress,
         network: 'monad'
       };
       
@@ -99,6 +149,32 @@ export function CryptoForm({
     }
   };
 
+  const handleConnectWallet = async () => {
+    try {
+      await connect();
+    } catch (error) {
+      setError('Failed to connect wallet');
+    }
+  };
+
+  const handleSwitchToMonad = async () => {
+    try {
+      const success = await switchToMonad();
+      if (!success) {
+        setError('Failed to switch to Monad network');
+      }
+    } catch (error) {
+      setError('Failed to switch to Monad network');
+    }
+  };
+
+  const handleRefreshReceiverAddress = () => {
+    if (receiverPhone) {
+      clearAddressError();
+      fetchReceiverAddress(receiverPhone);
+    }
+  };
+
   return (
     <div className="p-4 bg-white space-y-4">
       {/* iOS-style form header */}
@@ -108,6 +184,71 @@ export function CryptoForm({
           {description}
         </p>
       </div>
+
+      {/* Wallet Connection Status */}
+      {isFunding && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Wallet Status:</span>
+              <span className={`text-sm px-2 py-1 rounded-full ${
+                isConnected 
+                  ? 'text-green-600 bg-green-100' 
+                  : 'text-red-600 bg-red-100'
+              }`}>
+                {isConnected ? 'Connected' : 'Not Connected'}
+              </span>
+            </div>
+            
+            {isConnected && (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Network:</span>
+                  <span className={`text-sm px-2 py-1 rounded-full ${
+                    isConnectedToMonad 
+                      ? 'text-green-600 bg-green-100' 
+                      : 'text-yellow-600 bg-yellow-100'
+                  }`}>
+                    {isConnectedToMonad ? 'Monad' : 'Wrong Network'}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Balance:</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {formatAmount(balance)} MONAD
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Address:</span>
+                  <span className="text-xs text-gray-500 font-mono truncate max-w-32">
+                    {senderAddress}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+          
+          {!isConnected && (
+            <button
+              onClick={handleConnectWallet}
+              className="w-full mt-3 py-2 px-4 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Connect Wallet
+            </button>
+          )}
+          
+          {isConnected && !isConnectedToMonad && (
+            <button
+              onClick={handleSwitchToMonad}
+              className="w-full mt-3 py-2 px-4 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Switch to Monad
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Amount display */}
       {amount && (
@@ -122,17 +263,48 @@ export function CryptoForm({
           </div>
         </div>
       )}
+
+      {/* Receiver Address Display */}
+      {isFunding && receiverPhone && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Receiver:</span>
+              <span className="text-sm text-gray-900">{receiverPhone}</span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Wallet Address:</span>
+              <div className="flex items-center space-x-2">
+                {isLoadingReceiver ? (
+                  <span className="text-xs text-gray-500">Loading...</span>
+                ) : receiverAddress ? (
+                  <span className="text-xs text-gray-500 font-mono truncate max-w-32">
+                    {receiverAddress}
+                  </span>
+                ) : (
+                  <span className="text-xs text-red-500">Not configured</span>
+                )}
+                <button
+                  onClick={handleRefreshReceiverAddress}
+                  disabled={isLoadingReceiver}
+                  className="text-xs text-blue-600 hover:text-blue-700 disabled:text-gray-400"
+                >
+                  ↻
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* iOS-style crypto badges */}
       <div className="grid grid-cols-3 gap-2">
-        <div className="py-3 px-3 bg-orange-100 text-orange-800 rounded-xl text-sm font-semibold text-center border border-orange-200">
-          ₿ Bitcoin
+        <div className="py-3 px-3 bg-white text-purple-800 rounded-xl text-sm font-semibold text-center">
+
         </div>
         <div className="py-3 px-3 bg-purple-100 text-purple-800 rounded-xl text-sm font-semibold text-center border border-purple-200">
-          💰 USDC
-        </div>
-        <div className="py-3 px-3 bg-purple-100 text-purple-800 rounded-xl text-sm font-semibold text-center border border-purple-200">
-          ⟠ Ethereum
+          💰 Monad
         </div>
       </div>
       
@@ -217,10 +389,10 @@ export function CryptoForm({
             };
             onSubmit?.(formData);
           }}
-          disabled={isLoading || isProcessing}
+          disabled={isLoading || isProcessing || (isFunding && (!isConnected || !isConnectedToMonad || !receiverAddress))}
           className={`
             w-full py-4 text-white font-semibold rounded-2xl shadow-sm transition-all duration-150 text-base
-            ${(isLoading || isProcessing)
+            ${(isLoading || isProcessing || (isFunding && (!isConnected || !isConnectedToMonad || !receiverAddress)))
               ? 'bg-gray-400 cursor-not-allowed' 
               : `${buttonColor} active:shadow-md transform active:scale-95`
             }
