@@ -3,6 +3,7 @@ import { ConversationContextFactory } from '../memory';
 import { ConversationStateMachine, ConversationState } from '../conversationStateMachine';
 import { IntentParser } from './bot';
 import { AuthService } from '../auth';
+import type { User } from '../../types';
 
 import { getPhoneNumberInfo } from '../phoneNumber';
 
@@ -16,12 +17,7 @@ interface ConversationContext {
   lastActivity?: number;
 }
 
-interface User {
-  id: string;
-  phone: string;
-  name: string;
-  country: string;
-}
+
 
 export class ConversationHandler {
   private botService: BotService;
