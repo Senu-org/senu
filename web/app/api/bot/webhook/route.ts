@@ -1,30 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { BotService } from '@/lib/services/bot';
-import { ConversationContextFactory } from '@/lib/services/memory';
+import { ConversationHandler } from '@/lib/services/whatsapp-bot/conversationHandler';
+import { TransactionHandler } from '@/lib/services/whatsapp-bot/transactionHandler';
+import { BalanceHandler } from '@/lib/services/whatsapp-bot/balanceHandler';
+import { NotificationHandler } from '@/lib/services/whatsapp-bot/notificationHandler';
 import { ConversationStateMachine, ConversationState } from '@/lib/services/conversationStateMachine';
-import { IntentParser } from '@/lib/services/bot';
 import { AuthService } from '@/lib/services/auth';
-import WalletService from '@/lib/services/wallet';
-import SupabaseRepository from '@/lib/repository/SupabaseRepository';
 
-const botService = new BotService();
-const conversationContextService = ConversationContextFactory.getInstance();
+const conversationHandler = new ConversationHandler();
+const transactionHandler = new TransactionHandler();
+const balanceHandler = new BalanceHandler();
+const notificationHandler = new NotificationHandler();
 const conversationStateMachine = new ConversationStateMachine();
-const walletRepository = new SupabaseRepository();
-const walletService = new WalletService(walletRepository);
-
-// Helper function to send messages with error handling
-async function sendMessage(to: string, message: string) {
-  try {
-    await botService.sendMessage(to, message);
-  } catch (error) {
-    console.error(`Failed to send message to ${to}:`, error);
-    throw error;
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
+    console.log(`=== Webhook call started at ${new Date().toISOString()} ===`);
     const formData = await request.formData();
     
     // Check if this is a status update webhook (not an actual message)
@@ -45,102 +35,285 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
     
-    // Clean up the from number (remove whatsapp: prefix if present)
-    const cleanFrom = from.replace('whatsapp:', '');
+    // Extract country information from phone number
+    const { cleanFrom, detectedCountry } = conversationHandler.extractPhoneInfo(from);
+    
+    console.log(`Phone number: ${cleanFrom}, Detected country: ${detectedCountry}, Message: ${message}`);
 
-    let context = await conversationContextService.getContext(cleanFrom);
+    let context = await conversationHandler.getContext(cleanFrom);
+    console.log(`Context for ${cleanFrom}:`, context ? `State: ${context.state}` : 'No context');
+    
+    // Step 1: Get user data via REST API
+    const existingUser = await AuthService.getUserByPhone(cleanFrom);
+    
+    // Check if context has timed out (30 minutes) - but only if we have a context
+    if (context && conversationHandler.isContextTimedOut(context)) {
+      console.log(`Context timed out for ${cleanFrom}, resetting...`);
+      context = null;
+    }
+    
     if (!context) {
-      context = conversationStateMachine.getInitialContext(cleanFrom);
-      await conversationContextService.setContext(context);
-      try {
-        await botService.sendMessage(cleanFrom, "Welcome to the Remittance Bot! What is your name?");
-      } catch (error) {
-        console.error('Failed to send welcome message:', error);
-        return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
+      // Step 1.1, 1.2, 1.3: Handle user registration flow
+      if (!existingUser) {
+        // Step 1.2: User doesn't exist, create wallet (which creates user) and ask for name/country
+        try {
+          await AuthService.createWallet(cleanFrom);
+          console.log(`Created wallet and user for: ${cleanFrom}`);
+        } catch (error) {
+          console.error('Wallet creation error:', error);
+          // Continue anyway, user might already exist
+        }
+        // Initialize context for new user - this will send the welcome message
+        await conversationHandler.initializeContext(cleanFrom, false, null);
+        context = await conversationHandler.getContext(cleanFrom);
+      } else if (!existingUser.name || !existingUser.country) {
+        // Step 1.1: User exists but missing name or country
+        if (!existingUser.name) {
+          // Initialize context for incomplete user - this will send the name request
+          await conversationHandler.initializeContext(cleanFrom, false, existingUser);
+          context = await conversationHandler.getContext(cleanFrom);
+        } else if (!existingUser.country) {
+          // Initialize context for incomplete user - this will send the country selection
+          await conversationHandler.initializeContext(cleanFrom, false, existingUser);
+          context = await conversationHandler.getContext(cleanFrom);
+        }
+      } else {
+        // Step 1.3: User exists and has all data, continue to menu
+        await conversationHandler.initializeContext(cleanFrom, true, existingUser);
+        context = await conversationHandler.getContext(cleanFrom);
       }
-      context.state = ConversationState.AwaitingRegistrationName;
-      await conversationContextService.setContext(context);
+      
+      if (context) {
+        console.log(`Saving context after initialization: State: ${context.state}`);
+        await conversationHandler.saveContext(context);
+        // Verify context was saved
+        const savedContext = await conversationHandler.getContext(cleanFrom);
+        console.log(`Context after save:`, savedContext ? `State: ${savedContext.state}` : 'No context');
+      }
       return NextResponse.json({ success: true });
     }
 
-    const intent = new IntentParser().parse(message);
-    const newState = conversationStateMachine.transition(context.state, intent);
+    const intent = conversationHandler.parseIntent(message);
+    console.log(`Intent for "${message}": ${intent}`);
+    
+    // Update last activity timestamp if we have a context
+    if (context) {
+      context = conversationHandler.updateContextActivity(context);
+    }
+    
+    // Handle /start command - reset context and show menu for existing users
+    if (intent === '/start') {
+      if (existingUser && existingUser.name && existingUser.country) {
+        await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser.name);
+        context.state = ConversationState.ShowingMenu;
+      } else {
+        await conversationHandler.sendMessage(cleanFrom, "Welcome to the Remittance Bot! What is your name?");
+        context.state = ConversationState.AwaitingRegistrationName;
+      }
+      await conversationHandler.saveContext(context);
+      return NextResponse.json({ success: true });
+    }
+    
+    // Handle input before state transition
+    let handledInput = false;
+    if (context.state === ConversationState.AwaitingRecipientPhone && intent === 'text_input') {
+      context = await transactionHandler.handleRecipientPhoneInput(cleanFrom, message, context);
+      handledInput = true;
+    } else if (context.state === ConversationState.AwaitingAmount && (intent === 'amount_received' || intent === 'text_input')) {
+      context = await transactionHandler.handleAmountInput(cleanFrom, message, context);
+      handledInput = true;
+    } else if (context.state === ConversationState.AwaitingCountryConfirmation && (intent === 'menu_selection_1' || intent === 'menu_selection_2')) {
+      // Handle country confirmation before state transition
+      if (intent === 'menu_selection_1') {
+        // User confirmed the detected country
+        try {
+          // Update user with name and country via REST API
+          await AuthService.updateUser(cleanFrom, { 
+            name: context.name!, 
+            country: context.country! as "CR" | "NI" 
+          });
+          
+          await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered.`);
+          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
+          context.state = ConversationState.ShowingMenu;
+          // Don't process this input further - it was just for country confirmation
+          await conversationHandler.saveContext(context);
+          return NextResponse.json({ success: true });
+        } catch (error) {
+          console.error('Registration error:', error);
+          await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered.`);
+          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
+          context.state = ConversationState.ShowingMenu;
+          // Don't process this input further - it was just for country confirmation
+          await conversationHandler.saveContext(context);
+          return NextResponse.json({ success: true });
+        }
+      } else if (intent === 'menu_selection_2') {
+        // User wants to change the country
+        await conversationHandler.sendCountrySelectionMessage(cleanFrom);
+        context.state = ConversationState.AwaitingCountrySelection;
+      }
+      handledInput = true;
+    } else if (context.state === ConversationState.ShowingMenu && intent.startsWith('menu_selection_')) {
+      // Handle menu selections before state transition
+      if (intent === 'menu_selection_1') {
+        // Send Money
+        context = await transactionHandler.handleSendMoneySelection(cleanFrom, context);
+      } else if (intent === 'menu_selection_2') {
+        // Check Balance
+        await balanceHandler.handleBalanceMenuSelection(cleanFrom);
+        await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
+      } else if (intent === 'menu_selection_3') {
+        // Transaction Status
+        await notificationHandler.handleTransactionStatusMenuSelection(cleanFrom);
+        await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
+      } else if (intent === 'menu_selection_4') {
+        // Help
+        await notificationHandler.handleHelpMenuSelection(cleanFrom);
+        await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
+      }
+      handledInput = true;
+    } else if (context.state === ConversationState.ConfirmingTransaction && intent.startsWith('menu_selection_')) {
+      // Handle transaction confirmation before state transition
+      const result = await transactionHandler.handleTransactionConfirmation(cleanFrom, intent, context);
+      context = result.context;
+      if (result.shouldDeleteContext) {
+        await conversationHandler.deleteContext(cleanFrom);
+      }
+      handledInput = true;
+    } else {
+      const newState = conversationStateMachine.transition(context.state, intent);
+      context.state = newState;
+    }
 
-    context.state = newState;
-
-    switch (newState) {
+    console.log(`Processing state: ${context.state}, intent: ${intent}, handledInput: ${handledInput}`);
+    
+    // If input was already handled, skip the switch statement
+    if (handledInput) {
+      console.log(`Input already handled, skipping switch statement`);
+    } else {
+      switch (context.state) {
       case ConversationState.AwaitingRegistrationName:
+        console.log(`In AwaitingRegistrationName state, intent: ${intent}`);
         if (intent === 'text_input') {
           context.name = message;
-          await sendMessage(cleanFrom, "What country are you from?");
-          context.state = ConversationState.AwaitingRegistrationCountry;
+          context.country = detectedCountry;
+          console.log(`Setting name to: ${context.name}, country to: ${context.country}`);
+          
+          // Send country confirmation message
+          await conversationHandler.sendCountryConfirmationMessage(cleanFrom, context.name, context.country);
+          context.state = ConversationState.AwaitingCountryConfirmation;
+          console.log(`Transitioned to AwaitingCountryConfirmation state`);
+          await conversationHandler.saveContext(context);
         } else {
-          await sendMessage(cleanFrom, "Please tell me your name.");
+          console.log(`Invalid intent for AwaitingRegistrationName: ${intent}`);
+          await conversationHandler.sendMessage(cleanFrom, "Please tell me your name.");
         }
         break;
-      case ConversationState.AwaitingRegistrationCountry:
-        if (intent === 'text_input') {
+      case ConversationState.AwaitingCountryConfirmation:
+        // This case is now handled before state transition
+        await conversationHandler.sendMessage(cleanFrom, "Please select 'Yes, that's correct' or 'No, change country'.");
+        await conversationHandler.sendCountryConfirmationMessage(cleanFrom, context.name!, context.country!);
+        break;
+      case ConversationState.AwaitingCountrySelection:
+        if (intent === 'menu_selection_1') {
+          context.country = 'Costa Rica';
+        } else if (intent === 'menu_selection_2') {
+          context.country = 'Nicaragua';
+        } else if (intent === 'menu_selection_3') {
+          context.country = 'Mexico';
+        } else if (intent === 'menu_selection_4') {
+          await conversationHandler.sendMessage(cleanFrom, "Please type your country name:");
+          context.state = ConversationState.AwaitingCountrySelection;
+          break;
+        } else if (intent === 'text_input') {
+          // User typed a custom country name
           context.country = message;
-          // Register user and create wallet (temporarily simplified for testing)
-          try {
-            await AuthService.registerUser(cleanFrom, context.name!, context.country! as 'CR' | 'NI');
-            await walletService.createWallet(parseInt(cleanFrom));
-            await sendMessage(cleanFrom, `Thanks, ${context.name}! You are now registered and your wallet has been created.`);
-          } catch (error) {
-            console.error('Registration error:', error);
-            await sendMessage(cleanFrom, `Thanks, ${context.name}! You are now registered.`);
-          }
-          context.state = ConversationState.Idle; // Reset state
         } else {
-          await sendMessage(cleanFrom, "Please tell me your country.");
+          await conversationHandler.sendMessage(cleanFrom, "Please select a country from the menu or type your country name.");
+          await conversationHandler.sendCountrySelectionMessage(cleanFrom);
+          break;
         }
+        
+        // Register user with selected country via REST API
+        try {
+          await AuthService.updateUser(cleanFrom, { 
+            name: context.name!, 
+            country: context.country! as "CR" | "NI" 
+          });
+          
+          await conversationHandler.sendMessage(cleanFrom, `Great! You are now registered with ${context.country}.`);
+          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
+          context.state = ConversationState.ShowingMenu;
+        } catch (error) {
+          console.error('Registration error:', error);
+          await conversationHandler.sendMessage(cleanFrom, `Great! You are now registered with ${context.country}.`);
+          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
+          context.state = ConversationState.ShowingMenu;
+        }
+        break;
+      case ConversationState.ShowingMenu:
+        // Menu selections are handled before state transition
+        if (intent === '/menu') {
+          // User typed /menu command
+          await transactionHandler.handleMenuCommand(cleanFrom, existingUser?.name);
+        } else {
+          await transactionHandler.handleInvalidMenuSelection(cleanFrom, existingUser?.name);
+        }
+        break;
+      case ConversationState.AwaitingRecipientPhone:
+        // This state is handled before the switch statement
+        // If we reach here, it means the input wasn't handled properly
+        await conversationHandler.sendMessage(cleanFrom, "Please enter the recipient's phone number:");
         break;
       case ConversationState.AwaitingAmount:
-        const amount = parseFloat(message);
-        if (!isNaN(amount) && amount > 0) {
-          context.amount = amount;
-          // For now, let's assume a fixed fee or calculate it here
-          const fee = amount * 0.01; // 1% fee
-          const totalToSend = amount + fee;
-          await sendMessage(cleanFrom, `You want to send ${amount}. A fee of ${fee} will be applied. Total: ${totalToSend}. Reply /confirm to proceed or /cancel to abort.`);
-          context.state = ConversationState.ConfirmingTransaction;
-        } else {
-          await sendMessage(cleanFrom, "Please enter a valid amount.");
-        }
+        // This state is handled before the switch statement
+        // If we reach here, it means the input wasn't handled properly
+        await conversationHandler.sendMessage(cleanFrom, "Please enter the amount you want to send:");
         break;
+
       case ConversationState.ConfirmingTransaction:
-        if (intent === '/confirm') {
-          // Here, generate the Mini App link and send it to the user
-          const miniAppLink = `https://miniapp.example.com/payment?amount=${context.amount}&from=${cleanFrom}`;
-          await sendMessage(cleanFrom, `Please complete your payment using this link: ${miniAppLink}`);
-          // Reset context after sending the link for payment
-          await conversationContextService.deleteContext(cleanFrom); 
-          context.state = ConversationState.Idle; 
-        } else if (intent === '/cancel') {
-          await sendMessage(cleanFrom, "Transaction cancelled.");
-          await conversationContextService.deleteContext(cleanFrom); // Clear context
-          context.state = ConversationState.Idle; // Reset state
-        } else {
-          await sendMessage(cleanFrom, "Please reply /confirm or /cancel.");
-        }
+        // Transaction confirmation is handled before state transition
+        // If we reach here, it means the input wasn't handled properly
+        await conversationHandler.sendMessage(cleanFrom, "Please select a valid option from the buttons above.");
         break;
       case ConversationState.Idle:
-        if (intent === '/send') {
-          await sendMessage(cleanFrom, "How much would you like to send?");
+        if (intent === '/start') {
+          if (existingUser && existingUser.name && existingUser.country) {
+            await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser.name);
+            context.state = ConversationState.ShowingMenu;
+          } else {
+            await conversationHandler.sendMessage(cleanFrom, "Welcome to the Remittance Bot! What is your name?");
+            context.state = ConversationState.AwaitingRegistrationName;
+          }
+        } else if (intent === '/send') {
+          await conversationHandler.sendMessage(cleanFrom, "Please enter the recipient's phone number:");
+          context.state = ConversationState.AwaitingRecipientPhone;
         } else if (intent === '/status') {
-          await sendMessage(cleanFrom, "Your transaction status is... (not implemented yet)");
+          await notificationHandler.handleTransactionStatus(cleanFrom);
+        } else if (intent === '/balance') {
+          await balanceHandler.handleBalanceCheck(cleanFrom);
+        } else if (intent === '/menu') {
+          await transactionHandler.handleMenuCommand(cleanFrom, existingUser?.name);
+          context.state = ConversationState.ShowingMenu;
+        } else if (intent === '/help') {
+          await notificationHandler.handleHelpCommand(cleanFrom);
         } else {
-          await sendMessage(cleanFrom, "I don't understand that command. Try /send or /status or /register.");
+          await notificationHandler.handleUnknownCommand(cleanFrom);
         }
         break;
       // Other states will be handled here later
       default:
-        await sendMessage(cleanFrom, "Something went wrong. Please try again.");
+        await conversationHandler.sendMessage(cleanFrom, "Something went wrong. Please try again.");
         break;
+      }
     }
 
-    await conversationContextService.setContext(context);
+    if (context) {
+      await conversationHandler.saveContext(context);
+    }
     
+    console.log(`=== Webhook call completed at ${new Date().toISOString()} ===`);
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Webhook processing error:', error);

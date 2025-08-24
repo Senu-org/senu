@@ -24,4 +24,14 @@ export const config = {
     clientId: process.env.NEXT_PUBLIC_REOWN_CLIENT_ID || 'temp-client-id',
     gaslessEnabled: process.env.NEXT_PUBLIC_REOWN_GASLESS_ENABLED === 'true',
   },
+  encryption: {
+    key: process.env.ENCRYPTION_KEY || generateFallbackKey(),
+  },
 };
+
+// Generate a fallback encryption key for development
+function generateFallbackKey(): string {
+  // Generate a 32-byte (256-bit) key and convert to hex
+  const crypto = require('crypto');
+  return crypto.randomBytes(32).toString('hex');
+}

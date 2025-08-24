@@ -21,9 +21,11 @@ export class ConversationContextService {
   }
 
   async getContext(phoneNumber: string): Promise<ConversationContext | null> {
+    console.log(`Getting context for ${phoneNumber}, store size: ${this.contextStore.size}`);
     const context = this.contextStore.get(phoneNumber);
     
     if (!context) {
+      console.log(`No context found for ${phoneNumber}`);
       return null;
     }
 
@@ -33,10 +35,7 @@ export class ConversationContextService {
       return null;
     }
 
-    // Update last activity
-    context.lastActivity = Date.now();
-    this.contextStore.set(phoneNumber, context);
-    
+    // Don't update lastActivity here - let the webhook handle it
     return context;
   }
 
@@ -48,6 +47,16 @@ export class ConversationContextService {
     };
     
     this.contextStore.set(context.phoneNumber, contextWithTimestamp);
+    console.log(`Context saved for ${context.phoneNumber}, state: ${context.state}, store size: ${this.contextStore.size}`);
+    console.log(`Store contents:`, Array.from(this.contextStore.keys()));
+  }
+
+  async updateContextActivity(phoneNumber: string): Promise<void> {
+    const context = this.contextStore.get(phoneNumber);
+    if (context) {
+      context.lastActivity = Date.now();
+      this.contextStore.set(phoneNumber, context);
+    }
   }
 
   async deleteContext(phoneNumber: string): Promise<void> {

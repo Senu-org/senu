@@ -22,26 +22,40 @@ export class BotService {
         body: message,
       });
       console.log(`Message sent to ${to}: ${message}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`Error sending message to ${to}:`, error);
+      
+      // Handle rate limiting gracefully
+      if (error && typeof error === 'object' && 'code' in error && error.code === 63038) {
+        console.log(`Rate limit reached for ${to}. Message not sent.`);
+        return; // Don't throw error, just log and continue
+      }
+      
       throw error;
     }
   }
 
   async sendMessageWithButtons(to: string, message: string, buttons: string[]) {
     try {
-      // Create button text
+      // Create formatted button text with numbers instead of circle emojis
       const buttonText = buttons.map((button, index) => `${index + 1}. ${button}`).join('\n');
-      const fullMessage = `${message}\n\n${buttonText}`;
+      const fullMessage = `${message}\n\n${buttonText}\n\nPlease reply with the number (1-${buttons.length}) or type the option name.`;
       
       await this.client.messages.create({
         from: 'whatsapp:+14155238886',
         to: `whatsapp:${to}`,
         body: fullMessage,
       });
-      console.log(`Message with buttons sent to ${to}: ${fullMessage}`);
-    } catch (error) {
-      console.error(`Error sending message with buttons to ${to}:`, error);
+      console.log(`Message with formatted buttons sent to ${to}: ${fullMessage}`);
+    } catch (error: unknown) {
+      console.error(`Error sending message with formatted buttons to ${to}:`, error);
+      
+      // Handle rate limiting gracefully
+      if (error && typeof error === 'object' && 'code' in error && error.code === 63038) {
+        console.log(`Rate limit reached for ${to}. Message with buttons not sent.`);
+        return; // Don't throw error, just log and continue
+      }
+      
       throw error;
     }
   }
@@ -61,11 +75,14 @@ export class BotService {
     }
   }
 }
+
 export class IntentParser {
   parse(message: string): string {
     const lowerCaseMessage = message.toLowerCase().trim();
 
-    if (lowerCaseMessage.startsWith('/send')) {
+    if (lowerCaseMessage.startsWith('/start')) {
+      return '/start';
+    } else if (lowerCaseMessage.startsWith('/send')) {
       return '/send';
     } else if (lowerCaseMessage.startsWith('/status')) {
       return '/status';
@@ -89,10 +106,21 @@ export class IntentParser {
     }
     
     // Add more intent recognition logic here
-    // For now, if a message is a number, we'll assume it's an amount
-    if (!isNaN(parseFloat(lowerCaseMessage))) {
+    // Check if it's a phone number (starts with + and has digits, or just digits)
+    if (lowerCaseMessage.startsWith('+') && /^\+[0-9]{8,15}$/.test(lowerCaseMessage)) {
+      return 'text_input'; // Phone number
+    }
+    
+    // Check if it's just digits (could be phone number without +)
+    if (/^[0-9]{8,15}$/.test(lowerCaseMessage)) {
+      return 'text_input'; // Phone number without +
+    }
+    
+    // If it's a simple number (not a phone number), assume it's an amount
+    if (!isNaN(parseFloat(lowerCaseMessage)) && lowerCaseMessage.length < 8) {
       return 'amount_received';
     }
+    
     // If it's not a command and not a number, we'll assume it's a name or country for registration
     // This is a very simplified assumption and would need more sophisticated NLP for production
     if (lowerCaseMessage.length > 0) {

@@ -8,6 +8,7 @@ export interface IConversationContextService {
   getContext(phoneNumber: string): Promise<ConversationContext | null>;
   setContext(context: ConversationContext): Promise<void>;
   deleteContext(phoneNumber: string): Promise<void>;
+  updateContextActivity(phoneNumber: string): Promise<void>;
   getActiveSessionCount(): number | Promise<number>;
   cleanup(): void | Promise<void>;
 }
@@ -33,7 +34,7 @@ export class ConversationContextFactory {
           break;
       }
     }
-    return this.instance;
+    return this.instance!;
   }
 
   public static getType(): ConversationContextType {

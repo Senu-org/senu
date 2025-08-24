@@ -11,7 +11,7 @@ export async function GET(
     const numericPhone = Number(String(phone).replace(/[^0-9]/g, ""));
     if (!numericPhone) {
       return NextResponse.json(
-        { error: "Parámetro phone inválido" },
+        { error: "Invalid phone parameter" },
         { status: 400 }
       );
     }
@@ -21,7 +21,7 @@ export async function GET(
 
     if (!user) {
       return NextResponse.json(
-        { error: "Usuario no encontrado" },
+        { error: "User not found" },
         { status: 404 }
       );
     }
@@ -30,7 +30,52 @@ export async function GET(
   } catch (error) {
     console.error("GET /api/users/[phone] error:", error);
     return NextResponse.json(
-      { error: "Fallo al obtener usuario" },
+      { error: "Failed to get user" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/users/[phone] - Create new user
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ phone: string }> }
+) {
+  try {
+    const { phone } = await params;
+    const numericPhone = Number(String(phone).replace(/[^0-9]/g, ""));
+    if (!numericPhone) {
+      return NextResponse.json(
+        { error: "Invalid phone parameter" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json().catch(() => ({})) as {
+      name?: string;
+      country?: "CR" | "NI";
+    };
+
+    const repo = new SupabaseRepository();
+    
+    // Create user with minimal data using the new createUser method
+    const createdUser = await repo.createUser(numericPhone, {
+      name: body.name || undefined,
+      country: body.country || undefined,
+    });
+
+    if (!createdUser) {
+      return NextResponse.json(
+        { error: "Failed to create user" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(createdUser, { status: 201 });
+  } catch (error) {
+    console.error("POST /api/users/[phone] error:", error);
+    return NextResponse.json(
+      { error: "Failed to create user" },
       { status: 500 }
     );
   }

@@ -101,6 +101,25 @@ export class RedisConversationContextService {
     }
   }
 
+  async updateContextActivity(phoneNumber: string): Promise<void> {
+    try {
+      if (!this.redis) {
+        return; // Fallback to in-memory service
+      }
+
+      const key = this.KEY_PREFIX + phoneNumber;
+      const data = await this.redis.get(key);
+      
+      if (data) {
+        const context: ConversationContext = JSON.parse(data);
+        context.lastActivity = Date.now();
+        await this.redis.setex(key, this.SESSION_TIMEOUT, JSON.stringify(context));
+      }
+    } catch (error) {
+      console.error('Error updating context activity in Redis:', error);
+    }
+  }
+
   // Method to get active session count
   async getActiveSessionCount(): Promise<number> {
     try {
