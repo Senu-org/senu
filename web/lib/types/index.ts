@@ -75,15 +75,9 @@ export interface Transaction {
 
 export interface CustodialWallet {
   id: string;
-  user_phone: string;
-  blockchain_address: string;
-  type_wallet: string;
+  phone: number;
+  wallet_address: string;
   encrypterUserShare: string;
-  country?: string;
-  private_key_ref: string; // KMS reference
-  balance_usd: number;
-  nonce: number;
-  created_at: Date;
 }
 
 // API Request/Response Types
