@@ -80,6 +80,14 @@ export interface CustodialWallet {
   encrypterUserShare: string;
 }
 
+export interface WalletConnection {
+  isConnected: boolean;
+  address?: string;
+  chainId?: number;
+  balance?: string;
+  error?: string;
+}
+
 
 
 // API Request/Response Types
