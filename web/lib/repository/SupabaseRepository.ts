@@ -19,8 +19,9 @@ class SupabaseRepository implements IWalletRepository {
       const upsertPayload = {
         phone: walletData.phone,
         wallet_address: walletData.wallet_address,
-        encrypterUserShare: walletData.encrypterUserShare,
+        encrypterusershare: walletData.encrypterusershare,
         id: walletData.id,
+        type_wallet: "custodial"
       } as const;
 
       const { error } = await supabaseServer
@@ -48,7 +49,7 @@ class SupabaseRepository implements IWalletRepository {
    */
   async getUserShareByPhoneNumber(phoneNumber: number): Promise<string | null> {
     try {
-      await setUserContext(`+${phoneNumber}`);
+      await setUserContext(phoneNumber);
 
       const { data, error } = await supabaseServer
         .from(TABLES.USERS)

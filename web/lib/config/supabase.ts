@@ -36,7 +36,7 @@ export const TABLES = {
 } as const
 
 // Helper function to set user context for RLS policies
-export const setUserContext = async (phone: string) => {
+export const setUserContext = async (phone: string | number) => {
   const { error } = await supabaseServer.rpc('set_config', {
     setting_name: 'app.current_user_phone',
     setting_value: phone,

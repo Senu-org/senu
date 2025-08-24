@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import WalletService from '../../../../lib/services/wallet';
-import  JSONRepository from '../../../../lib/repository/JSONrepository';
-//import SupabaseRepository from '../../../../lib/repository/SupabaseRepository';
+//import  JSONRepository from '../../../../lib/repository/JSONrepository';
+import SupabaseRepository from '../../../../lib/repository/SupabaseRepository';
 
 export async function POST(request: NextRequest) {
   try {
     const { phoneNumber } = await request.json()
     console.log('Received phone number:', phoneNumber);
     const telegramUserId = phoneNumber; 
-    const walletRepository = new JSONRepository();
+    const walletRepository = new SupabaseRepository();
     const createWalletService = new WalletService(walletRepository);
     await createWalletService.createWallet(telegramUserId);
     

@@ -41,7 +41,7 @@ class WalletService {
         id: generatedWallet.id,
         phone: number,
         wallet_address: generatedWallet.address || '',
-        encrypterUserShare: JSON.stringify(encryptedShare)
+        encrypterusershare: JSON.stringify(encryptedShare)
       };
 
       await this.walletRepository.save(walletData);

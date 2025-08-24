@@ -77,7 +77,7 @@ export interface CustodialWallet {
   id: string;
   phone: number;
   wallet_address: string;
-  encrypterUserShare: string;
+  encrypterusershare: string;
 }
 
 // API Request/Response Types
