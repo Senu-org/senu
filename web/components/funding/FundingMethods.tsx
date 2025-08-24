@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { CreditCardForm, CryptoForm } from '../shared/forms';
 import { CompletionAnimation } from '../shared';
 import { config } from '@/lib/config/env';
+import { useAppKitAccount, useAppKitBalance, createAppKit } from '@reown/appkit/react';
+import { walletKitService } from '@/lib/services/walletkit';
 
 interface PaymentMethod {
   id: string;
@@ -23,7 +25,7 @@ const paymentMethods: PaymentMethod[] = [
     id: 'crypto',
     name: 'Criptomonedas',
     icon: '₿',
-    available: false
+    available: true
   }
 ];
 
@@ -60,6 +62,15 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
   // Wallet creation states
   const [walletCreationStatus, setWalletCreationStatus] = useState<'creating' | 'success' | 'error' | null>(null);
   const [walletData, setWalletData] = useState<WalletData | null>(null);
+  
+  // AppKit wallet states
+  const [isWalletConnecting, setIsWalletConnecting] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<string>('0');
+  
+  // AppKit hooks - simplified for now
+  const { address, isConnected } = useAppKitAccount();
+  const { fetchBalance } = useAppKitBalance();
 
   useEffect(() => {
     setMounted(true);
@@ -99,6 +110,36 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
       createWalletInBackground();
     }
   }, [phoneNumber, mounted, createWalletInBackground]);
+
+  // Wallet connection function
+  const connectWallet = async () => {
+    try {
+      setIsWalletConnecting(true);
+      
+      // For now, simulate wallet connection
+      // TODO: Implement real AppKit connection
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Simulate successful connection
+      const mockAddress = '0x' + Math.random().toString(16).substr(2, 40);
+      const mockBalance = (Math.random() * 100).toFixed(6);
+      
+      setWalletAddress(mockAddress);
+      setWalletBalance(mockBalance);
+      
+      console.log('Wallet connected (simulated):', { 
+        address: mockAddress, 
+        balance: mockBalance,
+        chainId: 1337 
+      });
+      
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+      alert('Failed to connect wallet. Please try again.');
+    } finally {
+      setIsWalletConnecting(false);
+    }
+  };
 
   const handleMethodClick = (methodId: string) => {
     const method = paymentMethods.find(m => m.id === methodId);
@@ -184,11 +225,66 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
         );
       case 'crypto':
         return (
-          <CryptoForm 
-            mode="funding" 
-            onSubmit={(paymentData) => handlePaymentSubmit(methodId, paymentData)}
-            isLoading={isProcessingPayment}
-          />
+          <div className="p-4 space-y-4">
+            {!walletAddress ? (
+              <div className="text-center">
+                <div className="mb-4">
+                  <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-2xl">₿</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Conecta tu Wallet</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Conecta tu wallet para enviar criptomonedas
+                  </p>
+                </div>
+                <button
+                  onClick={connectWallet}
+                  disabled={isWalletConnecting}
+                  className={`
+                    w-full py-3 px-4 rounded-2xl font-semibold transition-all duration-200
+                    ${isWalletConnecting 
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                      : 'bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800'
+                    }
+                  `}
+                >
+                  {isWalletConnecting ? (
+                    <div className="flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Conectando...
+                    </div>
+                  ) : (
+                    'Conectar Wallet'
+                  )}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-purple-50 rounded-2xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">Wallet Conectada</span>
+                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">Conectado</span>
+                  </div>
+                  <div className="text-xs text-gray-500 font-mono break-all">
+                    {walletAddress}
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 rounded-2xl p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Balance MONAD</span>
+                    <span className="text-lg font-semibold text-gray-900">{walletBalance}</span>
+                  </div>
+                </div>
+                
+                <CryptoForm 
+                  mode="funding" 
+                  onSubmit={(paymentData) => handlePaymentSubmit(methodId, paymentData)}
+                  isLoading={isProcessingPayment}
+                />
+              </div>
+            )}
+          </div>
         );
       default:
         return null;

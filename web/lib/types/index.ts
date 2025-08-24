@@ -83,6 +83,8 @@ export interface CustodialWallet {
   created_at: Date;
 }
 
+
+
 // API Request/Response Types
 export interface RegisterUserRequest {
   phone: string;
