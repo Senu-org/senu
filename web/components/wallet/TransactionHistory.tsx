@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface Transaction {
   id: string;
@@ -25,13 +25,7 @@ export function TransactionHistory({ walletAddress, onTransactionClick }: Transa
   const [isLoading, setIsLoading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'pending' | 'confirmed' | 'failed'>('all');
 
-  useEffect(() => {
-    if (walletAddress) {
-      loadTransactions();
-    }
-  }, [walletAddress, selectedStatus]);
-
-  const loadTransactions = async () => {
+  const loadTransactions = useCallback(async () => {
     setIsLoading(true);
     try {
       // TODO: Implement real transaction loading from Monad RPC
@@ -69,7 +63,13 @@ export function TransactionHistory({ walletAddress, onTransactionClick }: Transa
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [walletAddress]);
+
+  useEffect(() => {
+    if (walletAddress) {
+      loadTransactions();
+    }
+  }, [walletAddress, loadTransactions]);
 
   const filteredTransactions = transactions.filter(tx => 
     selectedStatus === 'all' || tx.status === selectedStatus

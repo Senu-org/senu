@@ -39,7 +39,6 @@ export function CryptoForm({
     connect,
     sendTransaction,
     switchToMonad,
-    isValidAddress,
     formatAmount,
     parseAmount
   } = useWalletKit();
@@ -182,7 +181,7 @@ export function CryptoForm({
   const handleConnectWallet = async () => {
     try {
       await connect();
-    } catch (error) {
+    } catch {
       setError('Failed to connect wallet');
     }
   };
@@ -193,7 +192,7 @@ export function CryptoForm({
       if (!success) {
         setError('Failed to switch to Monad network');
       }
-    } catch (error) {
+    } catch {
       setError('Failed to switch to Monad network');
     }
   };

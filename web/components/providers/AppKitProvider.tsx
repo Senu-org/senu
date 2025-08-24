@@ -57,7 +57,7 @@ const metadata = {
 };
 
 // Create the modal
-const modal = createAppKit({
+createAppKit({
   adapters: [wagmiAdapter],
   projectId: reownConfig.projectId!,
   networks: [monadNetwork],

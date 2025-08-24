@@ -78,7 +78,7 @@ export function CompletionAnimation({
         clearTimeout(timer4);
       };
     }
-  }, [isVisible, onComplete, mounted, redirectTo, router, isLoading]);
+  }, [isVisible, onComplete, mounted, redirectTo, router, isLoading, showDismissButton]);
 
   if (!mounted || !isVisible) return null;
 
