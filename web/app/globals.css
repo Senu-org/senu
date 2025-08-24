@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Splash screen styles */
+.splash-loading {
+  visibility: hidden;
+}
+
+.splash-ready .splash-loading {
+  visibility: visible;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

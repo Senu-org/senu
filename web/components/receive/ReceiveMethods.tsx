@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BankAccountForm, CryptoForm } from '../shared/forms';
 
 interface ReceiveMethod {
@@ -23,16 +23,27 @@ const receiveMethods: ReceiveMethod[] = [
     id: 'crypto',
     name: 'Wallet de Criptomonedas',
     icon: '₿',
-    available: true,
+    available: false,
     description: 'Recibe Bitcoin, USDC y Ethereum en tu wallet'
   }
 ];
 
 export function ReceiveMethods() {
   const [expandedMethod, setExpandedMethod] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Use safe defaults for SSR to prevent hydration mismatch
+  const safeExpandedMethod = mounted ? expandedMethod : null;
 
   const handleMethodClick = (methodId: string) => {
-    setExpandedMethod(expandedMethod === methodId ? null : methodId);
+    const method = receiveMethods.find(m => m.id === methodId);
+    if (method?.available) {
+      setExpandedMethod(expandedMethod === methodId ? null : methodId);
+    }
   };
 
   const BankTransferInfo = () => (
@@ -74,13 +85,6 @@ export function ReceiveMethods() {
             </label>
             <p className="text-sm font-semibold text-gray-800">1-2345-6789</p>
           </div>
-          
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
-              TIPO DE CUENTA
-            </label>
-            <p className="text-sm font-semibold text-gray-800">Cuenta Corriente Colones</p>
-          </div>
         </div>
       </div>
 
@@ -96,7 +100,7 @@ Tipo: Cuenta Corriente Colones
           `.trim();
           navigator.clipboard.writeText(bankInfo);
         }}
-        className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center space-x-2"
+        className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center space-x-2"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -123,13 +127,13 @@ Tipo: Cuenta Corriente Colones
 
   return (
     <div className="w-full max-w-sm mx-auto">
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+      <div className="bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100">
         
-        {/* Header */}
-        <div className="relative px-4 py-6 bg-gradient-to-r from-green-500 to-green-600">
+        {/* iOS-style header */}
+        <div className="px-4 py-4 border-b border-gray-100" style={{ backgroundColor: 'rgb(220 252 231 / var(--tw-bg-opacity, 1))' }}>
           <div className="text-center">
-            <h1 className="text-lg font-semibold text-white">Método para Recibir</h1>
-            <p className="text-xs text-green-100 mt-1">Configura cómo quieres recibir dinero</p>
+            <h3 className="text-lg font-semibold text-gray-900">Métodos de Recepción</h3>
+            <p className="text-sm text-gray-500 mt-1">Selecciona tu método preferido</p>
           </div>
         </div>
 
@@ -141,14 +145,18 @@ Tipo: Cuenta Corriente Colones
               <div
                 onClick={() => handleMethodClick(method.id)}
                 className={`
-                  flex items-center p-4 cursor-pointer transition-all duration-200 hover:bg-gray-50
-                  ${expandedMethod === method.id ? 'bg-green-50' : ''}
+                  flex items-center p-4 transition-all duration-200
+                  ${method.available 
+                    ? 'cursor-pointer active:bg-gray-100' 
+                    : 'cursor-not-allowed opacity-60'
+                  }
+                  ${safeExpandedMethod === method.id ? 'bg-purple-50' : 'hover:bg-gray-50'}
                 `}
               >
                 {/* Icon */}
                 <div className={`
                   flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center mr-4 transition-colors
-                  ${expandedMethod === method.id ? 'bg-green-100' : 'bg-gray-100'}
+                  ${safeExpandedMethod === method.id ? 'bg-purple-100' : 'bg-gray-100'}
                 `}>
                   <span className="text-xl">{method.icon}</span>
                 </div>
@@ -157,34 +165,43 @@ Tipo: Cuenta Corriente Colones
                 <div className="flex-1 min-w-0">
                   <h3 className={`
                     text-base font-semibold truncate
-                    ${expandedMethod === method.id ? 'text-green-900' : 'text-gray-900'}
+                    ${safeExpandedMethod === method.id ? 'text-purple-900' : 'text-gray-900'}
                   `}>
                     {method.name}
                   </h3>
                   <p className="text-sm text-gray-500 truncate">
                     {method.description}
                   </p>
+                  {!method.available && (
+                    <p className="text-xs text-gray-500 mt-1">Próximamente disponible</p>
+                  )}
                 </div>
 
                 {/* Expand/Collapse Indicator */}
                 <div className="flex-shrink-0 ml-3">
-                  <svg 
-                    className={`
-                      w-5 h-5 text-gray-400 transition-transform duration-200
-                      ${expandedMethod === method.id ? 'rotate-180' : ''}
-                    `} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  {method.available ? (
+                    <svg 
+                      className={`
+                        w-5 h-5 text-gray-400 transition-transform duration-200
+                        ${safeExpandedMethod === method.id ? 'rotate-180' : ''}
+                      `} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  ) : (
+                    <div className="w-5 h-5 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Expanded Content */}
-              {expandedMethod === method.id && (
-                <div className="animate-in slide-in-from-top duration-200">
+              {safeExpandedMethod === method.id && (
+                <div className="animate-fade-in">
                   {renderExpandedContent(method.id)}
                 </div>
               )}
@@ -192,14 +209,9 @@ Tipo: Cuenta Corriente Colones
           ))}
         </div>
 
-        {/* Security Footer */}
-        <div className="px-4 py-4 bg-gray-50 border-t border-gray-100">
-          <div className="flex items-center justify-center text-xs text-gray-500">
-            <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-            </svg>
-            <span>Información protegida con encriptación SSL de 256 bits</span>
-          </div>
+
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
+          <div className="flex items-center justify-center space-x-2" />
         </div>
       </div>
     </div>
