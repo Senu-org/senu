@@ -1,198 +1,246 @@
 # Senu
 
-A WhatsApp remittance application built with Next.js.
+A WhatsApp remittance application built with Next.js that enables international money transfers through WhatsApp messaging, focusing on the Costa Rica → Nicaragua corridor. The project combines Web3 technology with traditional fintech to create a seamless user experience.
 
-## Twilio Configuration
+## Architecture Overview
 
-To connect your app to Twilio WhatsApp Business API, follow these steps:
+Senu is a comprehensive fintech solution that integrates WhatsApp Bot API, a Progressive Web App (PWA), blockchain technology, and traditional payment systems to enable seamless international remittances.
 
-### 1. Twilio Account Setup
+### System Architecture Diagram
 
-1. **Create a Twilio Account**
-   - Go to [Twilio Console](https://console.twilio.com/)
-   - Sign up for a new account or log in to existing account
-
-2. **Enable WhatsApp Business API**
-   - Navigate to **Messaging** → **Try it out** → **Send a WhatsApp message**
-   - Follow the setup wizard to enable WhatsApp Business API
-   - You'll receive a WhatsApp number (e.g., `+14155238886`)
-
-3. **Get Your Credentials**
-   - Go to **Console Dashboard** → **Account Info**
-   - Copy your **Account SID** and **Auth Token**
-   - Keep these credentials secure
-
-### 2. WhatsApp Sandbox Setup (Development)
-
-1. **Join the Sandbox**
-   - In Twilio Console, go to **Messaging** → **Try it out** → **Send a WhatsApp message**
-   - You'll see a sandbox number and join code
-   - Send the join code via WhatsApp to the sandbox number to activate
-
-2. **Configure Webhook URL**
-   - Go to **Messaging** → **Settings** → **WhatsApp Sandbox Settings**
-   - Set **Webhook URL** to: `https://your-domain.com/api/bot/webhook`
-   - For local development, use ngrok: `https://your-ngrok-url.ngrok.io/api/bot/webhook`
-   - Set **HTTP Method** to: `POST`
-
-### 3. Production WhatsApp Business API
-
-For production, you'll need to:
-
-1. **Apply for WhatsApp Business API**
-   - Submit business verification through Twilio
-   - Provide business documentation and use case
-   - Wait for approval (can take several days)
-
-2. **Configure Production Webhook**
-   - Once approved, configure webhook URL in production settings
-   - Ensure your domain has valid SSL certificate
-
-### 4. Environment Variables
-
-Create a `.env.local` file in the `web/` directory with the following variables:
-
-```bash
-# Twilio Configuration
-TWILIO_ACCOUNT_SID=your_twilio_account_sid_here
-TWILIO_AUTH_TOKEN=your_twilio_auth_token_here
-TWILIO_ACCOUNT_SUBACCOUNT_SID=your_twilio_subaccount_sid_here  # Optional
+```mermaid
+graph TB
+    subgraph "User Journey Flow"
+        LP[Landing Page] --> WA[WhatsApp Bot]
+        WA --> |"Registration & Amount"| BOT[Bot Questions]
+        BOT --> |"Payment Link"| FUND[Funding Page]
+        FUND --> |"Return to WhatsApp"| WA2[WhatsApp Confirmation]
+        WA2 --> |"Notify Recipient"| REC[Receive Page]
+    end
+    
+    subgraph "Frontend Layer"
+        PWA[Next.js PWA]
+        PWA --> HOME[Home/Landing]
+        PWA --> FUNDING[Funding Page]
+        PWA --> RECEIVE[Receive Page]
+        PWA --> OFFLINE[Offline Support]
+    end
+    
+    subgraph "Backend Services"
+        API[API Gateway]
+        AUTH[Auth Service]
+        WALLET[Wallet Service]
+        TRANS[Transaction Service]
+        NOTIF[Notification Service]
+        BOTSERV[Bot Service]
+    end
+    
+    subgraph "Web3 & Blockchain"
+        MONAD[Monad Blockchain]
+        PARA[Para SDK<br/>Invisible Wallets]
+        REOWN[Reown AppKit<br/>Wallet Connect]
+        WAGMI[Wagmi Hooks]
+    end
+    
+    subgraph "External Services"
+        TWILIO[Twilio WhatsApp API]
+        ONRAMP[On-Ramp Partners]
+        OFFRAMP[Off-Ramp SINPE]
+        PUSH[Web Push API]
+    end
+    
+    subgraph "Data Layer"
+        SUPABASE[(Supabase PostgreSQL)]
+        ENVIO[Envio Indexer]
+    end
+    
+    %% Connections
+    LP --> PWA
+    FUND --> PWA
+    REC --> PWA
+    
+    PWA --> API
+    BOTSERV --> TWILIO
+    TWILIO --> WA
+    
+    API --> AUTH
+    API --> WALLET
+    API --> TRANS
+    API --> NOTIF
+    API --> BOTSERV
+    
+    WALLET --> PARA
+    WALLET --> MONAD
+    PWA --> REOWN
+    PWA --> WAGMI
+    
+    TRANS --> ONRAMP
+    TRANS --> OFFRAMP
+    NOTIF --> PUSH
+    
+    AUTH --> SUPABASE
+    WALLET --> SUPABASE
+    TRANS --> SUPABASE
+    MONAD --> ENVIO
 ```
 
-### 5. Webhook Security
+### User Flow
 
-Your webhook endpoint (`/api/bot/webhook`) automatically validates Twilio requests using:
-- Request signature verification
-- Timestamp validation to prevent replay attacks
+#### For Senders (Origin Users)
+1. **Landing Page**: Users start at the landing page
+2. **WhatsApp Redirect**: Users are redirected to WhatsApp to interact with the bot
+3. **Bot Registration**: Bot asks questions (name, country, amount to send)
+4. **Funding Page**: Bot provides a link to the funding page in our PWA
+5. **Payment Processing**: Users complete payment through various methods
+6. **WhatsApp Return**: Users return to WhatsApp for confirmation and tracking
 
-### 6. Testing Your Integration
+#### For Recipients (Destination Users)
+1. **WhatsApp Notification**: Recipients receive a WhatsApp notification about incoming money
+2. **Receive Page**: Clicking the notification opens our PWA's receive page
+3. **Withdrawal Process**: Recipients can withdraw funds to their bank account or preferred method
 
-#### WhatsApp Sandbox Testing
+## Technology Stack
 
-1. **Join the Sandbox**
-   - Go to [Twilio WhatsApp Sandbox](https://console.twilio.com/us1/develop/sms/manage/whatsapp-sandbox)
-   - Send the provided code to the sandbox number (`+14155238886`)
-   - Wait for confirmation message
+### Frontend (Progressive Web App)
+- **Framework**: Next.js 15.5.0 with TypeScript and App Router
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **State Management**: TanStack Query for server state management
+- **PWA Features**: Service Worker, push notifications, offline support
+- **Mobile-First**: Responsive design optimized for mobile devices [[memory:6999967]]
 
-2. **Test Bot Flows**
+### Backend & APIs
+- **API Architecture**: Next.js API routes in `/app/api/`
+- **Database**: Supabase (PostgreSQL) with Row Level Security
+- **Authentication**: Custom JWT tokens with bcrypt hashing
+- **Session Management**: In-memory conversation context with Redis fallback
+- **Push Notifications**: Web Push API for real-time notifications
 
-   **New User Registration:**
-   - Send any message → "Welcome to the Remittance Bot! What is your name?"
-   - Send "John" → "What country are you from?"
-   - Send "Mexico" → "Thanks, John! You are now registered and your wallet has been created."
+### Web3 & Blockchain Integration
+- **Blockchain**: Monad network for fast, low-cost transactions
+- **Wallet Management**: 
+  - Para SDK for invisible custodial wallets
+  - Reown AppKit for external wallet connections
+- **Web3 Libraries**: 
+  - wagmi v2 for React hooks
+  - viem v2 for Ethereum interactions
+  - ethers v6 for blockchain operations
+- **Wallet Connection**: WalletConnect v2 protocol
 
-   **Send Money:**
-   - Send "/send" → "How much would you like to send?"
-   - Send "100" → "You want to send 100. A fee of 1 will be applied. Total: 101. Reply /confirm to proceed or /cancel to abort."
-   - Send "/confirm" → Payment link generated
+### External Integrations
+- **WhatsApp**: Twilio SDK for WhatsApp Business API
+- **Payment Processing**: On-ramp and off-ramp partner integrations
+- **Banking**: SINPE integration for Costa Rica/Nicaragua transfers
+- **Indexing**: Envio for blockchain data indexing and analytics
 
-   **Cancel Transaction:**
-   - Send "/send" → "How much would you like to send?"
-   - Send "50" → Transaction details
-   - Send "/cancel" → "Transaction cancelled."
+## Quick Start
 
-   **Check Status:**
-   - Send "/status" → Status information
+### Prerequisites
+- Node.js 18+ and npm
+- Twilio account with WhatsApp Business API access
+- Supabase project for database
 
-3. **Debug Commands**
+### Installation
+
+1. **Clone and install dependencies**:
    ```bash
-   # Test webhook endpoint
-   curl -X POST http://localhost:3000/api/bot/webhook \
-     -H "Content-Type: application/json" \
-     -d '{"Body":"test","From":"whatsapp:+1234567890"}'
-   
-   # Check ngrok status
-   ngrok status
-   ```
-
-4. **Verify Webhook**
-   - Send a WhatsApp message to your Twilio number
-   - Check your application logs for webhook processing
-   - Verify the bot responds correctly
-
-## Getting Started
-
-1. Install dependencies:
-   ```bash
-   cd web
+   git clone <repository-url>
+   cd senu/web
    npm install
    ```
 
-2. Set up environment variables (see above)
+2. **Set up environment variables**:
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your credentials
+   ```
 
-3. Run the development server:
+3. **Initialize database**:
+   ```bash
+   npx supabase db reset
+   ```
+
+4. **Start development server**:
    ```bash
    npm run dev
    ```
 
-4. For local development with webhooks:
+5. **For WhatsApp webhook testing**:
    ```bash
-   # Install ngrok globally
-   npm install -g ngrok
-   
-   # Start ngrok tunnel
-   ngrok http 3000
-   
-   # Use the ngrok URL in your Twilio webhook configuration
+   # In another terminal
+   npx ngrok http 3000
+   # Use the ngrok URL in Twilio webhook settings
    ```
 
-## Features
+### Basic Commands
 
-### Conversation Management
-- **In-Memory Session Storage**: Fast, no-database conversation context management
-- **Automatic Cleanup**: Sessions expire after 30 minutes of inactivity
-- **State Machine**: Robust conversation flow management
-- **Multiple Implementations**: Support for in-memory, Redis, and database storage
+```bash
+# Development
+npm run dev              # Start development server
+npm run build           # Build for production
+npm run start           # Start production server
 
-### WhatsApp Bot Features
-- **User Registration**: Collect name and country information
-- **Money Transfer**: Send money with fee calculation
-- **Transaction Management**: Confirm/cancel transactions
-- **Status Checking**: Check transaction status
-- **Session Persistence**: Maintain conversation context across messages
+# Code Quality
+npm run lint            # Run ESLint
+npm run type-check      # TypeScript type checking
 
-## API Endpoints
+# Database
+npx supabase db reset   # Reset database with migrations
+npx supabase db push    # Push schema changes
+```
 
-- `POST /api/bot/test` - Send test WhatsApp messages
-- `POST /api/bot/webhook` - WhatsApp webhook endpoint
-- `POST /api/transactions/send` - Send remittances
-- `GET /api/wallets/[phone]/balance` - Get wallet balance
-- `POST /api/wallets/create` - Create new wallet
-- `POST /api/wallets/transfer` - Transfer between wallets
+## Key Features
 
-## Troubleshooting
+- **WhatsApp Integration**: Conversational interface for money transfers
+- **Progressive Web App**: Installable, offline-capable mobile experience
+- **Blockchain Powered**: Monad network with invisible custodial wallets
+- **Real-time Notifications**: Push notifications for transaction updates
+- **Secure Authentication**: JWT-based auth with rate limiting
+- **Mobile-First Design**: Optimized for Central American mobile users [[memory:6999967]]
 
-### Common Issues
+## Documentation
 
-1. **Webhook Not Receiving Messages**
-   - Verify webhook URL is accessible from internet
-   - Check SSL certificate is valid
-   - Ensure webhook URL is correctly configured in Twilio
-   - Check ngrok URL is correct and tunnel is active
+For detailed documentation, see the [`/docs`](./docs/) directory:
 
-2. **Authentication Errors**
-   - Verify Account SID and Auth Token are correct
-   - Check environment variables are loaded properly
-   - Ensure no extra spaces in credentials
+- **[📖 Complete Documentation Index](./docs/README.md)** - Start here for all documentation
+- **[🚀 Development Guide](./docs/development.md)** - Detailed setup and development workflow
+- **[📱 Twilio Setup](./docs/twilio-setup.md)** - WhatsApp Business API configuration
+- **[🔧 API Reference](./docs/api-reference.md)** - Complete API documentation
+- **[🐛 Troubleshooting](./docs/troubleshooting.md)** - Common issues and solutions
 
-3. **Message Sending Failures**
-   - Verify recipient number is in correct format
-   - Check if recipient has joined WhatsApp sandbox (development)
-   - Ensure message content complies with WhatsApp policies
+## Project Structure
 
-4. **Sandbox-Specific Issues**
-   - **Not receiving messages**: Ensure you've joined the WhatsApp sandbox
-   - **Session management**: Check if conversation context is being maintained (30-minute timeout)
-   - **Bot not responding**: Verify webhook URL is correctly set in Twilio console
-   - **Number format**: Use international format (e.g., +1234567890)
+```
+/
+├── web/                          # Next.js PWA Application
+│   ├── app/                      # App Router (Next.js 13+)
+│   │   ├── api/                  # API Routes
+│   │   ├── funding/              # Funding page for senders
+│   │   ├── receive/              # Receive page for recipients
+│   │   └── offline/              # PWA offline fallback
+│   ├── components/               # React Components
+│   ├── lib/                      # Services and utilities
+│   └── public/                   # Static assets and PWA manifest
+├── docs/                         # Documentation
+├── project-specs/                # Technical specifications
+└── postman/                      # API testing collection
+```
 
-5. **Development Environment Issues**
-   - **ngrok tunnel down**: Restart ngrok and update webhook URL
-   - **Server not running**: Ensure `npm run dev` is running on port 3000
-   - **Environment variables**: Check `.env.local` file exists and has correct values
+## Contributing
 
-### Support Resources
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/new-feature`
+3. Make your changes following our coding standards
+4. Write tests for new functionality
+5. Submit a pull request [[memory:6999961]]
 
-- [Twilio WhatsApp API Documentation](https://www.twilio.com/docs/whatsapp)
-- [Twilio WhatsApp Business API Guide](https://www.twilio.com/docs/whatsapp/api)
-- [Twilio Console](https://console.twilio.com/)
+See the [Development Guide](./docs/development.md#contributing) for detailed contribution guidelines.
+
+## Support
+
+- **Documentation**: Check [`/docs`](./docs/) for comprehensive guides
+- **Issues**: Report bugs and request features via GitHub Issues
+- **API Testing**: Use the Postman collection in [`/postman`](./postman/)
+
+## License
+
+[License information to be added]
