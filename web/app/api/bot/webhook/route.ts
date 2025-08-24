@@ -70,11 +70,21 @@ export async function POST(request: NextRequest) {
         // Step 1.1: User exists but missing name or country
         if (!existingUser.name) {
           // Initialize context for incomplete user - this will send the name request
-          await conversationHandler.initializeContext(cleanFrom, false, existingUser);
+          const userWithDefaults = {
+            ...existingUser,
+            name: existingUser.name || '',
+            country: existingUser.country || undefined
+          };
+          await conversationHandler.initializeContext(cleanFrom, false, userWithDefaults);
           context = await conversationHandler.getContext(cleanFrom);
         } else if (!existingUser.country) {
           // Initialize context for incomplete user - this will send the country selection
-          await conversationHandler.initializeContext(cleanFrom, false, existingUser);
+          const userWithDefaults = {
+            ...existingUser,
+            name: existingUser.name || '',
+            country: existingUser.country || undefined
+          };
+          await conversationHandler.initializeContext(cleanFrom, false, userWithDefaults);
           context = await conversationHandler.getContext(cleanFrom);
         }
       } else {

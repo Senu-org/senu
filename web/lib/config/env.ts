@@ -32,6 +32,6 @@ export const config = {
 // Generate a fallback encryption key for development
 function generateFallbackKey(): string {
   // Generate a 32-byte (256-bit) key and convert to hex
-  const crypto = require('crypto');
-  return crypto.randomBytes(32).toString('hex');
+  // For now, return a static key for development
+  return '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 }

@@ -4,6 +4,17 @@ import { supabaseServer, TABLES } from "../config/supabase";
 import { config } from "../config/env";
 import type { User, JWTPayload } from "../types";
 
+interface UserResponse {
+  id?: string;
+  name?: string;
+  country?: "CR" | "NI";
+  wallet_address?: string;
+  wallet_address_external?: string;
+  type_wallet?: string;
+  kyc_status?: "pending" | "verified" | "rejected";
+  [key: string]: unknown;
+}
+
 // Rate limiting storage (in production, use Redis or database)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
@@ -15,7 +26,7 @@ export class AuthService {
   /**
    * Check if user exists and get user data via REST API
    */
-  static async getUserByPhone(phoneNumber: string): Promise<any | null> {
+  static async getUserByPhone(phoneNumber: string): Promise<User | null> {
     try {
       const response = await fetch(`${this.baseUrl}/api/users/${phoneNumber}`, {
         method: 'GET',
@@ -32,7 +43,21 @@ export class AuthService {
         throw new Error(`Failed to get user: ${response.statusText}`);
       }
 
-      return await response.json();
+      const userData = await response.json() as UserResponse;
+      
+      // Convert to User type
+      return {
+        id: userData.id || '',
+        phone: phoneNumber,
+        name: userData.name || '',
+        country: userData.country,
+        wallet_address: userData.wallet_address || '',
+        wallet_address_external: userData.wallet_address_external,
+        type_wallet: userData.type_wallet,
+        kyc_status: userData.kyc_status || 'pending',
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
     } catch (error) {
       console.error('Error getting user by phone:', error);
       return null;
@@ -44,7 +69,7 @@ export class AuthService {
   /**
    * Update user data via REST API
    */
-  static async updateUser(phoneNumber: string, updates: { name?: string; country?: string }): Promise<any | null> {
+  static async updateUser(phoneNumber: string, updates: { name?: string; country?: string }): Promise<UserResponse | null> {
     try {
       const response = await fetch(`${this.baseUrl}/api/users/${phoneNumber}`, {
         method: 'PUT',
