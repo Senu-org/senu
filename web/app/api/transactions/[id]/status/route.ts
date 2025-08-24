@@ -45,8 +45,8 @@ export async function GET(
     try {
       const decoded = await AuthService.validateToken(token)
       userPhone = decoded.phone
-    } catch (authError: any) {
-      const errorCode = authError.message as ErrorCodes
+    } catch (authError: unknown) {
+      const errorCode = authError instanceof Error ? authError.message as ErrorCodes : 'AUTH_ERROR' as ErrorCodes;
       return NextResponse.json<ApiResponse<never>>({
         success: false,
         error: {
@@ -89,7 +89,14 @@ export async function GET(
       headers.set('X-Retry-After', '10')
     }
 
-    return NextResponse.json<ApiResponse<any>>({
+    return NextResponse.json<ApiResponse<{
+      transactionId: string;
+      status: string;
+      timestamp: string;
+      blockNumber?: number | bigint;
+      gasUsed?: string;
+      effectiveGasPrice?: string;
+    }>>({
       success: true,
       data: transactionStatus
     }, { 
@@ -97,7 +104,7 @@ export async function GET(
       headers
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`GET /api/transactions/${params}/status error:`, error)
 
     // Map known errors to appropriate HTTP status codes
@@ -107,8 +114,9 @@ export async function GET(
       'UNAUTHORIZED': { status: 403, message: 'Not authorized to view this transaction' }
     }
 
-    const mapping = errorMappings[error.message] || { status: 500, message: 'Internal server error' }
-    const errorCode = error.message as ErrorCodes || 'INTERNAL_SERVER_ERROR'
+    const errorMessage = error instanceof Error ? error.message : 'INTERNAL_SERVER_ERROR';
+    const mapping = errorMappings[errorMessage] || { status: 500, message: 'Internal server error' }
+    const errorCode = errorMessage as ErrorCodes || 'INTERNAL_SERVER_ERROR'
 
     return NextResponse.json<ApiResponse<never>>({
       success: false,

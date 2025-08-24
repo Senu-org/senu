@@ -1,4 +1,12 @@
 // Notification Service - centralized notification logic
+
+interface TransactionNotificationData {
+  transactionId: string;
+  amount?: number;
+  status?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
 export class NotificationService {
   static async sendNotification(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -16,7 +24,7 @@ export class NotificationService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     phoneNumber: string,
     status: string,
-    data: any,
+    data: TransactionNotificationData,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     message?: string
   ) {

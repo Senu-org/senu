@@ -7,8 +7,10 @@ dotenv.config();
 
 const para = new Para(Environment.SANDBOX, process.env.PARA_API_KEY || '');
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const account = createParaAccount(para as any);
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const walletClient = createParaViemClient(para as any, {
   account,
   chain: monadChain,

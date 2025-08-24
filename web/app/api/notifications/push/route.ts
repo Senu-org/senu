@@ -23,7 +23,7 @@ interface NotificationPayload {
   badge?: string;
   image?: string;
   tag?: string;
-  data?: any;
+  data?: Record<string, string | number | boolean | object>;
   actions?: Array<{
     action: string;
     title: string;
@@ -40,8 +40,16 @@ interface PushRequest {
   targetEndpoint?: string; // Para enviar a un usuario específico
 }
 
+interface Subscription {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
 // Simulamos almacenamiento de suscripciones (en producción usar base de datos)
-const subscriptions = new Map<string, any>();
+const subscriptions = new Map<string, Subscription>();
 
 export async function POST(request: NextRequest) {
   try {
@@ -88,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     // Determinar a qué suscripciones enviar
     const targetSubscriptions = targetEndpoint 
-      ? [subscriptions.get(targetEndpoint)].filter(Boolean)
+      ? [subscriptions.get(targetEndpoint)].filter((sub): sub is Subscription => sub !== undefined)
       : Array.from(subscriptions.values());
 
     if (targetSubscriptions.length === 0) {
@@ -113,16 +121,19 @@ export async function POST(request: NextRequest) {
         );
         sentCount++;
         console.log('[Push] Notification sent to:', subscription.endpoint.substring(0, 50) + '...');
-      } catch (error: any) {
+      } catch (error: unknown) {
         failedCount++;
-        const errorMsg = `Failed to send to ${subscription.endpoint.substring(0, 30)}...: ${error.message}`;
+        const errorMsg = `Failed to send to ${subscription.endpoint.substring(0, 30)}...: ${error instanceof Error ? error.message : 'Unknown error'}`;
         errors.push(errorMsg);
         console.error('[Push]', errorMsg);
         
         // Si la suscripción es inválida, removerla
-        if (error.statusCode === 410 || error.statusCode === 404) {
-          subscriptions.delete(subscription.endpoint);
-          console.log('[Push] Removed invalid subscription:', subscription.endpoint.substring(0, 50) + '...');
+        if (error && typeof error === 'object' && 'statusCode' in error) {
+          const statusCode = (error as { statusCode: number }).statusCode;
+          if (statusCode === 410 || statusCode === 404) {
+            subscriptions.delete(subscription.endpoint);
+            console.log('[Push] Removed invalid subscription:', subscription.endpoint.substring(0, 50) + '...');
+          }
         }
       }
     });
@@ -141,11 +152,11 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Push] Error sending notifications:', error);
     
     return NextResponse.json(
-      { error: 'Error interno del servidor', details: error.message },
+      { error: 'Error interno del servidor', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

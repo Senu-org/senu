@@ -45,8 +45,8 @@ export async function POST(
     try {
       const decoded = await AuthService.validateToken(token)
       userPhone = decoded.phone
-    } catch (authError: any) {
-      const errorCode = authError.message as ErrorCodes
+    } catch (authError: unknown) {
+      const errorCode = authError instanceof Error ? authError.message as ErrorCodes : 'AUTH_ERROR' as ErrorCodes;
       return NextResponse.json<ApiResponse<never>>({
         success: false,
         error: {
@@ -70,11 +70,9 @@ export async function POST(
     }
 
     // Optional: Parse retry options from request body
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    let retryOptions = {}
     try {
-      const body = await request.json()
-      retryOptions = body || {}
+      await request.json()
+      // retryOptions = body || {} // Removed unused variable
     } catch {
       // Ignore JSON parsing errors, use empty options
     }
@@ -86,7 +84,13 @@ export async function POST(
     const headers = new Headers()
     headers.set('Location', `/api/transactions/${transactionId}/status`)
     
-    return NextResponse.json<ApiResponse<any>>({
+    return NextResponse.json<ApiResponse<{
+      originalTransactionId: string;
+      status: string;
+      timestamp: string;
+      gasPriceIncrease: string;
+      message: string;
+    }>>({
       success: true,
       data: retriedTransaction
     }, { 
@@ -94,7 +98,7 @@ export async function POST(
       headers
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`POST /api/transactions/${params}/retry error:`, error)
 
     // Map known errors to appropriate HTTP status codes
@@ -108,8 +112,9 @@ export async function POST(
       'ONRAMP_SERVICE_UNAVAILABLE': { status: 503, message: 'Payment service temporarily unavailable' }
     }
 
-    const mapping = errorMappings[error.message] || { status: 500, message: 'Internal server error' }
-    const errorCode = error.message as ErrorCodes || 'INTERNAL_SERVER_ERROR'
+    const errorMessage = error instanceof Error ? error.message : 'INTERNAL_SERVER_ERROR';
+    const mapping = errorMappings[errorMessage] || { status: 500, message: 'Internal server error' }
+    const errorCode = errorMessage as ErrorCodes || 'INTERNAL_SERVER_ERROR'
 
     return NextResponse.json<ApiResponse<never>>({
       success: false,
@@ -117,7 +122,7 @@ export async function POST(
         code: errorCode,
         message: mapping.message,
         timestamp: new Date(),
-        details: error.name === 'ValidationError' ? error.details : undefined
+        details: error instanceof Error && 'details' in error ? (error as { details: Record<string, string | number | boolean | object> }).details : undefined
       }
     }, { status: mapping.status })
   }

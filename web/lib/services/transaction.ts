@@ -49,7 +49,9 @@ export class TransactionService {
 
       // Create Para account and Viem client using shared Para instance
       const paraServer = this.paraManager.getParaServer();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const paraAccount = createParaAccount(paraServer as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const viemClient = createParaViemClient(paraServer as any, {
         account: paraAccount,
         chain: monadChain,
@@ -174,7 +176,14 @@ export class TransactionService {
     }
   }
 
-  static async getUserTransactions(userPhone: string, limit: number = 50): Promise<any[]> {
+  static async getUserTransactions(userPhone: string, limit: number = 50): Promise<Array<{
+    transactionId: string;
+    sender: string;
+    receiver: string;
+    amount: number;
+    status: string;
+    timestamp: string;
+  }>> {
     try {
       // TODO: Implement actual database query to get user transactions
       // For now, return empty array as placeholder

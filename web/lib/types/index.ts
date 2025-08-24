@@ -120,7 +120,7 @@ export interface WalletBalanceResponse {
 export interface WithdrawRequest {
   transaction_id: string;
   offramp_provider: string;
-  bank_account_details: Record<string, any>;
+  bank_account_details: Record<string, string | number | boolean>;
 }
 
 export interface WithdrawResponse {
@@ -155,7 +155,7 @@ export interface BotConversationContext {
   user_phone: string;
   current_flow: 'registration' | 'send_money' | 'check_status' | 'idle';
   step: string;
-  data: Record<string, any>;
+  data: Record<string, string | number | boolean | object>;
   last_activity: Date;
 }
 
@@ -181,7 +181,7 @@ export interface ValidationError {
 export interface ApiError {
   code: ErrorCodes;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, string | number | boolean | object>;
   timestamp: Date;
 }
 
@@ -203,8 +203,8 @@ export interface JWTPayload {
 export interface TransactionStateTransition {
   from: TransactionStatus
   to: TransactionStatus
-  conditions?: Record<string, any>
-  metadata?: Record<string, any>
+  conditions?: Record<string, string | number | boolean>
+  metadata?: Record<string, string | number | boolean | object>
 }
 
 export interface TransactionProcessingPhase {
@@ -271,9 +271,9 @@ export interface TransactionOrchestrationContext {
   phases_completed: string[]
   rollback_points: Array<{
     phase: string
-    rollback_data: Record<string, any>
+    rollback_data: Record<string, string | number | boolean | object>
   }>
-  processing_metadata: Record<string, any>
+  processing_metadata: Record<string, string | number | boolean | object>
 }
 
 export interface OrchestrationStep {
@@ -323,7 +323,7 @@ export interface TransactionError {
   phase: 'validation' | 'onramp' | 'blockchain' | 'offramp'
   retryable: boolean
   user_message: string
-  technical_details?: Record<string, any>
+  technical_details?: Record<string, string | number | boolean | object>
   timestamp: Date
 }
 
@@ -395,12 +395,12 @@ export interface MockTransactionConfig {
 export interface TestScenario {
   scenario_id: string
   description: string
-  initial_conditions: Record<string, any>
-  expected_outcomes: Record<string, any>
+  initial_conditions: Record<string, string | number | boolean | object>
+  expected_outcomes: Record<string, string | number | boolean | object>
   steps: Array<{
     action: string
-    parameters: Record<string, any>
-    expected_result: any
+    parameters: Record<string, string | number | boolean | object>
+    expected_result: string | number | boolean | object
   }>
 }
 
@@ -408,11 +408,11 @@ export interface TestScenario {
 declare global {
   interface Window {
     ethereum?: {
-      request: (args: { method: string; params?: any[] }) => Promise<any>;
+      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
       isMetaMask?: boolean;
       selectedAddress?: string;
-      on?: (event: string, callback: (...args: any[]) => void) => void;
-      removeListener?: (event: string, callback: (...args: any[]) => void) => void;
+      on?: (event: string, callback: (...args: unknown[]) => void) => void;
+      removeListener?: (event: string, callback: (...args: unknown[]) => void) => void;
     };
   }
 }

@@ -1,6 +1,7 @@
 import { WalletType } from "@getpara/server-sdk";
 import dotenv from "dotenv";
 import { IWalletRepository } from "../interfaces/IWalletRepository";
+import { CustodialWallet } from "../types";
 import crypto from "crypto";
 import ParaInstanceManager from "./ParaInstanceManager";
 dotenv.config();
@@ -37,12 +38,14 @@ class WalletService {
       const userShare: string = paraServer.getUserShare() || '';
       const encryptedShare = this.encryptUserShare(userShare);
 
-      const walletData = {
+      const walletData: CustodialWallet = {
         id: generatedWallet.id,
-        address: generatedWallet.address,
-        type: generatedWallet.type,
-        phoneNumber: number,
-        encryptedUserShare: JSON.stringify(encryptedShare),
+        user_phone: `+${number}`,
+        blockchain_address: generatedWallet.address || '',
+        private_key_ref: JSON.stringify(encryptedShare),
+        balance_usd: 0,
+        nonce: 0,
+        created_at: new Date()
       };
 
       await this.walletRepository.save(walletData);

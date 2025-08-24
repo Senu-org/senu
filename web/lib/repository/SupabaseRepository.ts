@@ -10,39 +10,24 @@ class SupabaseRepository implements IWalletRepository {
   
   /**
    * Saves wallet data to Supabase custodial_wallets table
-   * @param walletData - Wallet data containing id, address, type, phoneNumber, and encryptedUserShare
+   * @param walletData - CustodialWallet data to save
    */
-  async save(walletData: {
-    id: string;
-    address: string;
-    type: string;
-    phoneNumber: number;
-    encryptedUserShare: string;
-  }): Promise<void> {
+  async save(walletData: CustodialWallet): Promise<void> {
     try {
       // Set user context for RLS policies
-      await setUserContext(`+${walletData.phoneNumber}`);
-
-      // Map wallet data to database schema
-      const custodialWalletData: Partial<CustodialWallet> = {
-        user_phone: `+${walletData.phoneNumber}`,
-        blockchain_address: walletData.address,
-        private_key_ref: walletData.encryptedUserShare, // Store encrypted share as key reference
-        balance_usd: 0, // Initial balance
-        nonce: 0 // Initial nonce
-      };
+      await setUserContext(walletData.user_phone);
 
       // Insert wallet data into custodial_wallets table
       const { error } = await supabaseServer
         .from(TABLES.CUSTODIAL_WALLETS)
-        .insert(custodialWalletData);
+        .insert(walletData);
 
       if (error) {
         console.error('❌ Error saving wallet to Supabase:', error);
         throw new Error(`Failed to save wallet: ${error.message}`);
       }
 
-      console.log(`✅ Wallet saved successfully for phone: +${walletData.phoneNumber}`);
+      console.log(`✅ Wallet saved successfully for phone: ${walletData.user_phone}`);
     } catch (error) {
       console.error('❌ Error in SupabaseRepository.save:', error);
       throw error;
