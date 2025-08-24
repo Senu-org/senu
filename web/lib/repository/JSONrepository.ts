@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path"; 
-import { IWalletRepository } from "../../lib/interfaces/IWalletRepository";
+import { IWalletRepository } from "../interfaces/IWalletRepository";
 
 class JSONRepository implements IWalletRepository{    
         private readonly filePath: string;     

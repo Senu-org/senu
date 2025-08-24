@@ -29,14 +29,14 @@
     - Configurar Row Level Security policies básicas
     - _Requisitos: 1.3, 7.1, 9.3_
 
-- [ ] 3. Desarrollar servicios de autenticación y gestión de usuarios
+- [x] 3. Desarrollar servicios de autenticación y gestión de usuarios
 
-  - [] 3.1 Implementar Auth Service
+  - [x] 3.1 Implementar Auth Service
     - Crear API Route /api/auth/register para registro por número telefónico
     - Implementar AuthService en /lib/services/auth.ts
     - Configurar JWT token generation y validation
     - _Requisitos: 1.1, 1.2, 1.4_
-  - [ ] 3.2 Crear middleware de autenticación
+  - [x] 3.2 Crear middleware de autenticación
     - Implementar JWT verification en Next.js middleware
     - Configurar rate limiting por número telefónico
     - Añadir logging de requests autenticados
@@ -81,21 +81,21 @@
     - Crear respuestas automáticas para estados de error
     - _Requisitos: 1.1, 1.2, 2.1, 10.1_
 
-- [ ] 6. Implementar Transaction Service y orquestación
+- [x] 6. Implementar Transaction Service y orquestación
 
-  - [ ] 6.1 Crear API Routes para transacciones
+  - [x] 6.1 Crear API Routes para transacciones
     - Implementar POST /api/transactions/send con validaciones
     - Desarrollar GET /api/transactions/[id]/status con polling
     - Crear POST /api/transactions/[id]/retry para fallos
     - _Requisitos: 2.1, 2.4, 10.2, 10.3_
-  - [ ] 6.2 Implementar máquina de estados de transacciones
+  - [x] 6.2 Implementar máquina de estados de transacciones
     - Implementar TransactionService en /lib/services/transaction.ts
     - Crear TransactionStatus enum y transitions
     - Desarrollar funciones para cambios de estado seguros
     - Implementar persistence de estados en Supabase
     - Escribir tests para todas las transiciones válidas
     - _Requisitos: 2.4, 4.1, 5.1, 10.1, 10.2_
-  - [ ] 6.3 Desarrollar orquestador de flujo completo
+  - [x] 6.3 Desarrollar orquestador de flujo completo
     - Crear función principal processTransaction end-to-end
     - Implementar coordinación entre wallet, on-ramp, off-ramp
     - Desarrollar rollback logic para transacciones fallidas

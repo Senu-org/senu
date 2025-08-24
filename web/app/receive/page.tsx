@@ -1,5 +1,5 @@
-import { ReceiveMoney } from '@/components/receive';
+import { ReceivePageWithValidation } from '@/components/receive';
 
 export default function ReceivePage() {
-  return <ReceiveMoney />;
+  return <ReceivePageWithValidation />;
 }

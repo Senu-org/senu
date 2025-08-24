@@ -1,5 +1,5 @@
 export { ReceiveMoney } from './ReceiveMoney';
-export { ReceiveHeader } from './ReceiveHeader';
+export { ReceivePageWithValidation } from './ReceivePageWithValidation';
 export { ReceiveHero } from './ReceiveHero';
 export { ReceiveMethods } from './ReceiveMethods';
 

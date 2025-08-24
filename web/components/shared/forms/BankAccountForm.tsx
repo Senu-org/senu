@@ -8,7 +8,6 @@ interface BankAccountFormProps {
 export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormProps) {
   const isFunding = mode === 'funding';
   
-  const title = isFunding ? 'Transferencia Bancaria' : 'Cuenta Bancaria';
   const description = isFunding 
     ? 'Transfiere directamente desde tu cuenta bancaria' 
     : 'Configura tu cuenta bancaria para recibir transferencias';
@@ -18,73 +17,69 @@ export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormP
     : 'Guardar Cuenta Bancaria';
   
   const buttonColor = isFunding 
-    ? 'bg-green-500 hover:bg-green-600' 
-    : 'bg-blue-500 hover:bg-blue-600';
+    ? 'bg-purple-500 hover:bg-purple-600' 
+    : 'bg-purple-500 hover:bg-purple-600';
 
   return (
-    <div className="p-4 bg-gray-50 border-t border-gray-200 space-y-4">
-      <div className="text-center">
-        <h4 className="font-semibold text-gray-800 mb-2">{title}</h4>
-        <p className="text-sm text-gray-600 mb-4">
+    <div className="p-4 bg-white space-y-4">
+      {/* iOS-style form header */}
+      <div className="text-center pb-2">
+        <p className="text-sm text-gray-600 mt-1">
           {description}
         </p>
       </div>
-      <div className="space-y-3">
+
+      {/* iOS-style form fields */}
+      <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-900 mb-2">
             Número de Cuenta
           </label>
           <input
             type="text"
+            inputMode="numeric"
             placeholder="1234567890"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
           />
         </div>
+        
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-900 mb-2">
             Banco
           </label>
-          <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base appearance-none">
             <option value="">Selecciona tu banco</option>
-            <option value="bancolombia">Bancolombia</option>
-            <option value="davivienda">Davivienda</option>
-            <option value="bbva">BBVA</option>
-            <option value="banco_bogota">Banco de Bogotá</option>
-            <option value="banco_popular">Banco Popular</option>
+            <option value="bncr">Banco Nacional de Costa Rica</option>
+            <option value="bcr">Banco de Costa Rica</option>
+            <option value="bac">BAC San José</option>
             <option value="scotiabank">Scotiabank</option>
+            <option value="davivienda">Davivienda</option>
+            <option value="promerica">Promerica</option>
           </select>
         </div>
         
         {!isFunding && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
                 Nombre del Titular
               </label>
               <input
                 type="text"
-                placeholder="Juan Pérez"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Juan Pérez Rodríguez"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
               />
             </div>
+            
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo de Cuenta
-              </label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">Selecciona el tipo</option>
-                <option value="ahorros">Cuenta de Ahorros</option>
-                <option value="corriente">Cuenta Corriente</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Documento de Identidad
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Cédula de Identidad
               </label>
               <input
                 type="text"
+                inputMode="numeric"
                 placeholder="1-2345-6789"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
               />
             </div>
           </>
@@ -92,26 +87,39 @@ export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormP
         
         {isFunding && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Monto a Transferir
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500">$</span>
+              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-base">$</span>
               <input
                 type="number"
+                inputMode="decimal"
                 placeholder="0.00"
-                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
               />
             </div>
           </div>
         )}
       </div>
-      <button 
-        onClick={() => onSubmit?.({})}
-        className={`w-full py-3 ${buttonColor} text-white font-semibold rounded-lg transition-colors`}
-      >
-        {buttonText}
-      </button>
+
+      {/* iOS-style submit button */}
+      <div className="pt-2">
+        <button 
+          onClick={() => onSubmit?.({})}
+          className={`w-full py-4 ${buttonColor} text-white font-semibold rounded-2xl shadow-sm active:shadow-md transform active:scale-95 transition-all duration-150 text-base`}
+        >
+          {buttonText}
+        </button>
+      </div>
+
+      {/* iOS-style security notice */}
+      <div className="flex items-center justify-center space-x-2 pt-2">
+        <svg className="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+        </svg>
+        <span className="text-xs text-gray-600">Información protegida con SSL</span>
+      </div>
     </div>
   );
 }
