@@ -8,7 +8,13 @@ class ParaInstanceManager {
   private paraServer: Para;
 
   private constructor() {
-    this.paraServer = new Para(Environment.SANDBOX, process.env.PARA_API_KEY || '');
+    const apiKey = process.env.PARA_API_KEY || '';
+    if (!apiKey) {
+      console.warn('⚠️ PARA_API_KEY not found in environment variables. Para Protocol integration may not work properly.');
+    }
+    
+    this.paraServer = new Para(Environment.SANDBOX, apiKey);
+    console.log(`✅ Para Protocol initialized with environment: ${Environment.SANDBOX}`);
   }
 
   public static getInstance(): ParaInstanceManager {

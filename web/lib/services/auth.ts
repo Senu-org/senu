@@ -8,66 +8,126 @@ import type { User, JWTPayload } from "../types";
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
 // Auth Service - centralized authentication logic
+
 export class AuthService {
+  private static baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
   /**
-   * Register a new user by phone number
-   * Requirements: 1.1, 1.2, 1.4 - User registration and wallet creation
+   * Check if user exists and get user data via REST API
    */
-  static async registerUser(
-    phone: string,
-    name: string,
-    country: "CR" | "NI"
-  ): Promise<User> {
+  static async getUserByPhone(phoneNumber: string): Promise<any | null> {
     try {
-      // Validate phone number format
-      if (!this.isValidPhoneNumber(phone)) {
-        throw new Error("INVALID_PHONE");
+      const response = await fetch(`${this.baseUrl}/api/users/${phoneNumber}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 404) {
+        return null;
       }
 
-      // Check if user already exists
-      const { data: existingUser } = await supabaseServer
-        .from(TABLES.USERS)
-        .select("*")
-        .eq("phone", phone)
-        .single();
-
-      if (existingUser) {
-        throw new Error("USER_ALREADY_EXISTS");
+      if (!response.ok) {
+        throw new Error(`Failed to get user: ${response.statusText}`);
       }
 
-      // Create user in database
-      const { data: user, error } = await supabaseServer
-        .from(TABLES.USERS)
-        .insert({
-          phone,
-          name,
-          country,
-          wallet_address: this.generateTempWalletAddress(), // Temporary until wallet service creates real one
-          kyc_status: "pending",
-        })
-        .select()
-        .single();
-
-      if (error || !user) {
-        console.error("Error creating user:", error);
-        throw new Error("USER_CREATION_FAILED");
-      }
-
-      return {
-        id: user.id,
-        phone: user.phone,
-        name: user.name,
-        country: user.country ?? undefined,
-        wallet_address: user.wallet_address,
-        wallet_address_external: user.wallet_address_external ?? undefined,
-        type_wallet: user.type_wallet ?? undefined,
-        kyc_status: user.kyc_status,
-        created_at: new Date(user.created_at),
-        updated_at: new Date(user.updated_at),
-      };
+      return await response.json();
     } catch (error) {
-      console.error("AuthService.registerUser error:", error);
-      throw error;
+      console.error('Error getting user by phone:', error);
+      return null;
+    }
+  }
+
+
+
+  /**
+   * Update user data via REST API
+   */
+  static async updateUser(phoneNumber: string, updates: { name?: string; country?: string }): Promise<any | null> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/users/${phoneNumber}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update user: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating user:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if user is registered (has name and country)
+   */
+  static async isUserRegistered(phoneNumber: string): Promise<boolean> {
+    const user = await this.getUserByPhone(phoneNumber);
+    return !!(user && user.name && user.country);
+  }
+
+  /**
+   * Register user with complete information
+   */
+  static async register(phoneNumber: string, name: string, country: string): Promise<boolean> {
+    try {
+      // First check if user exists
+      const existingUser = await this.getUserByPhone(phoneNumber);
+      
+      if (existingUser) {
+        // Update existing user
+        const updated = await this.updateUser(phoneNumber, { name, country });
+        return !!updated;
+      } else {
+        // Create wallet (which creates user) and then update with name/country
+        await this.createWallet(phoneNumber);
+        const updated = await this.updateUser(phoneNumber, { name, country });
+        return !!updated;
+      }
+    } catch (error) {
+      console.error('Error registering user:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Create wallet for user via REST API
+   */
+  static async createWallet(phoneNumber: string): Promise<boolean> {
+    try {
+      console.log(`Creating wallet for phone number: ${phoneNumber} in the url ${this.baseUrl}/api/wallets/create`);
+      const response = await fetch(`${this.baseUrl}/api/wallets/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber: parseInt(phoneNumber) }),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error creating wallet:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get user wallet address via REST API
+   */
+  static async getUserWalletAddress(phoneNumber: string): Promise<string | null> {
+    try {
+      const user = await this.getUserByPhone(phoneNumber);
+      return user?.wallet_address || null;
+    } catch (error) {
+      console.error('Error getting wallet address:', error);
+      return null;
     }
   }
 
@@ -170,39 +230,6 @@ export class AuthService {
     limit.count++;
     rateLimitStore.set(key, limit);
     return true;
-  }
-
-  /**
-   * Get user by phone number
-   */
-  static async getUserByPhone(phone: string): Promise<User | null> {
-    try {
-      const { data: user, error } = await supabaseServer
-        .from(TABLES.USERS)
-        .select("*")
-        .eq("phone", phone)
-        .single();
-
-      if (error || !user) {
-        return null;
-      }
-
-      return {
-        id: user.id,
-        phone: user.phone,
-        name: user.name,
-        country: user.country ?? undefined,
-        wallet_address: user.wallet_address,
-        wallet_address_external: user.wallet_address_external ?? undefined,
-        type_wallet: user.type_wallet ?? undefined,
-        kyc_status: user.kyc_status,
-        created_at: new Date(user.created_at),
-        updated_at: new Date(user.updated_at),
-      };
-    } catch (error) {
-      console.error("AuthService.getUserByPhone error:", error);
-      return null;
-    }
   }
 
   /**

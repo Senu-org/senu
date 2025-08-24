@@ -79,7 +79,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Register new user
-    const user = await AuthService.registerUser(phone, name, country);
+    const registrationSuccess = await AuthService.register(phone, name, country);
+    
+    if (!registrationSuccess) {
+      throw new Error("USER_CREATION_FAILED");
+    }
+
+    // Get the registered user data
+    const user = await AuthService.getUserByPhone(phone);
+    if (!user) {
+      throw new Error("USER_CREATION_FAILED");
+    }
 
     // Generate JWT token for the new user
     const token = await AuthService.generateToken(phone);
@@ -90,9 +100,9 @@ export async function POST(request: NextRequest) {
       wallet: {
         id: "pending",
         user_phone: parseInt(phone.replace('+', '')),
-        blockchain_address: user.wallet_address, // Temporary address
+        blockchain_address: user.wallet_address || "pending", // Temporary address
         type_wallet: "custodial",
-        encrypterUserShare: "pending",
+        encrypterusershare: "pending",
         private_key_ref: "pending_wallet_creation",
         balance_usd: 0,
         nonce: 0,

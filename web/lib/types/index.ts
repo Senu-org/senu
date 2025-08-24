@@ -80,7 +80,7 @@ export interface CustodialWallet {
   user_phone: number;
   blockchain_address: string;
   type_wallet: string;
-  encrypterUserShare: string;
+  encrypterusershare: string;
   country?: string;
   private_key_ref: string; // KMS reference
   balance_usd: number;

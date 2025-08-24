@@ -25,7 +25,8 @@ class SupabaseRepository implements IWalletRepository {
       const upsertPayload = {
         phone: walletData.user_phone,
         wallet_address: walletData.blockchain_address,
-        encrypterUserShare: walletData.private_key_ref,
+        encrypterusershare: walletData.private_key_ref,
+        type_wallet: walletData.type_wallet,
         id: walletData.id,
       } as const;
 
@@ -171,6 +172,40 @@ class SupabaseRepository implements IWalletRepository {
   }
 
   /**
+   * Creates a new user with minimal required data
+   */
+  async createUser(phoneNumber: number, updates: Partial<Pick<User, "name" | "country" | "wallet_address">>): Promise<User | null> {
+    try {
+      const phoneWithPlus = `+${phoneNumber}`;
+      await setUserContext(phoneWithPlus);
+
+      // Create user with minimal data
+      const userData = {
+        phone: phoneWithPlus,
+        name: updates.name || null,
+        country: updates.country || null,
+        wallet_address: updates.wallet_address || `0x${phoneNumber.toString().padStart(40, '0')}`,
+      };
+
+      const { data, error } = await supabaseServer
+        .from(TABLES.USERS)
+        .insert(userData)
+        .select("*")
+        .single();
+
+      if (error) {
+        console.error("❌ Error creando usuario en Supabase:", error);
+        throw new Error(`Failed to create user: ${error.message}`);
+      }
+
+      return data as unknown as User;
+    } catch (error) {
+      console.error("❌ Error en SupabaseRepository.createUser:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Actualiza campos permitidos del usuario identificado por su número de teléfono
    * Retorna el usuario actualizado o null si no existe
    */
@@ -231,22 +266,60 @@ class SupabaseRepository implements IWalletRepository {
         return null;
       }
 
+      // Try to find existing user first
+      let existingUser = null;
       for (const candidate of candidates) {
         const { data, error } = await supabaseServer
           .from(TABLES.USERS)
-          .update(payload)
+          .select("*")
           .eq("phone", candidate)
+          .single();
+        if (!error) {
+          existingUser = data;
+          break;
+        }
+        if (error.code === "PGRST116") {
+          continue;
+        }
+      }
+
+      if (existingUser) {
+        // Update existing user
+        for (const candidate of candidates) {
+          const { data, error } = await supabaseServer
+            .from(TABLES.USERS)
+            .update(payload)
+            .eq("phone", candidate)
+            .select("*")
+            .single();
+
+          if (!error) {
+            return data as unknown as User;
+          }
+          if (error.code === "PGRST116") {
+            continue;
+          }
+          console.error("❌ Error actualizando usuario en Supabase:", error);
+          throw new Error(`Failed to update user: ${error.message}`);
+        }
+      } else {
+        // Create new user using upsert
+        const upsertPayload = {
+          phone: phoneWithPlus,
+          ...payload,
+        };
+
+        const { data, error } = await supabaseServer
+          .from(TABLES.USERS)
+          .upsert(upsertPayload, { onConflict: "phone" })
           .select("*")
           .single();
 
         if (!error) {
           return data as unknown as User;
         }
-        if (error.code === "PGRST116") {
-          continue;
-        }
-        console.error("❌ Error actualizando usuario en Supabase:", error);
-        throw new Error(`Failed to update user: ${error.message}`);
+        console.error("❌ Error creando usuario en Supabase:", error);
+        throw new Error(`Failed to create user: ${error.message}`);
       }
 
       return null;
