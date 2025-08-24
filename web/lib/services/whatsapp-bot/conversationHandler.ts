@@ -1,14 +1,31 @@
 import { BotService } from './bot';
 import { ConversationContextFactory } from '../memory';
-import { ConversationStateMachine, ConversationState } from './conversationStateMachine';
+import { ConversationStateMachine, ConversationState } from '../conversationStateMachine';
 import { IntentParser } from './bot';
 import { AuthService } from '../auth';
-import { WalletService } from '../wallet';
-import { getCountryFromPhoneNumber, getPhoneNumberInfo } from '../phoneNumber';
+
+import { getPhoneNumberInfo } from '../phoneNumber';
+
+interface ConversationContext {
+  state: ConversationState;
+  phoneNumber: string;
+  amount?: number;
+  recipient?: string;
+  name?: string;
+  country?: string;
+  lastActivity?: number;
+}
+
+interface User {
+  id: string;
+  phone: string;
+  name: string;
+  country: string;
+}
 
 export class ConversationHandler {
   private botService: BotService;
-  private conversationContextService: any;
+  private conversationContextService: ReturnType<typeof ConversationContextFactory.getInstance>;
   private conversationStateMachine: ConversationStateMachine;
   private intentParser: IntentParser;
 
@@ -88,14 +105,14 @@ export class ConversationHandler {
   }
 
   // Check if context has timed out
-  isContextTimedOut(context: any) {
+  isContextTimedOut(context: ConversationContext | null) {
     const contextTimeout = 30 * 60 * 1000; // 30 minutes in milliseconds
     return context && context.lastActivity && (Date.now() - context.lastActivity) > contextTimeout;
   }
 
   // Initialize context for new or existing users
-  async initializeContext(phoneNumber: string, isRegistered: boolean, existingUser: any) {
-    let context = this.conversationStateMachine.getInitialContext(phoneNumber);
+  async initializeContext(phoneNumber: string, isRegistered: boolean, existingUser: User | null) {
+    const context = this.conversationStateMachine.getInitialContext(phoneNumber);
     
     if (isRegistered && existingUser) {
       // Existing user - set state to showing menu and send welcome message
@@ -125,10 +142,10 @@ export class ConversationHandler {
   }
 
   // Handle /start command
-  async handleStartCommand(phoneNumber: string, isRegistered: boolean, existingUser: any) {
+  async handleStartCommand(phoneNumber: string, isRegistered: boolean, existingUser: User | null) {
     if (isRegistered && existingUser) {
       // Reset context and show menu for existing users
-      let context = this.conversationStateMachine.getInitialContext(phoneNumber);
+      const context = this.conversationStateMachine.getInitialContext(phoneNumber);
       context.state = ConversationState.ShowingMenu;
       context.lastActivity = Date.now();
       await this.conversationContextService.setContext(context);
@@ -140,7 +157,7 @@ export class ConversationHandler {
       }
     } else {
       // For new users, start registration
-      let context = this.conversationStateMachine.getInitialContext(phoneNumber);
+      const context = this.conversationStateMachine.getInitialContext(phoneNumber);
       context.state = ConversationState.AwaitingRegistrationName;
       context.lastActivity = Date.now();
       await this.conversationContextService.setContext(context);
@@ -159,13 +176,13 @@ export class ConversationHandler {
   }
 
   // Update context last activity
-  updateContextActivity(context: any) {
+  updateContextActivity(context: ConversationContext) {
     context.lastActivity = Date.now();
     return context;
   }
 
   // Save context
-  async saveContext(context: any) {
+  async saveContext(context: ConversationContext) {
     await this.conversationContextService.setContext(context);
   }
 

@@ -1,5 +1,5 @@
 import { BotService } from './bot';
-import { ConversationState } from './conversationStateMachine';
+import { ConversationState, ConversationContext } from '../conversationStateMachine';
 
 export class TransactionHandler {
   private botService: BotService;
@@ -9,7 +9,7 @@ export class TransactionHandler {
   }
 
   // Handle amount input and validation
-  async handleAmountInput(phoneNumber: string, message: string, context: any) {
+  async handleAmountInput(phoneNumber: string, message: string, context: ConversationContext) {
     const amount = parseFloat(message);
     if (!isNaN(amount) && amount > 0) {
       context.amount = amount;
@@ -28,9 +28,14 @@ export class TransactionHandler {
   }
 
   // Handle transaction confirmation
-  async handleTransactionConfirmation(phoneNumber: string, intent: string, context: any) {
+  async handleTransactionConfirmation(phoneNumber: string, intent: string, context: ConversationContext) {
     if (intent === 'menu_selection_1') {
       // User confirmed the transaction
+      if (!context.amount) {
+        await this.botService.sendMessage(phoneNumber, "Error: No amount found in context. Please start over.");
+        context.state = ConversationState.Idle;
+        return { context, shouldDeleteContext: true };
+      }
       const miniAppLink = `https://miniapp.example.com/payment?amount=${context.amount}&from=${phoneNumber}`;
       await this.botService.sendMessage(phoneNumber, `Please complete your payment using this link: ${miniAppLink}`);
       // Reset context after sending the link for payment
@@ -42,6 +47,11 @@ export class TransactionHandler {
       context.state = ConversationState.Idle;
       return { context, shouldDeleteContext: true };
     } else {
+      if (!context.amount) {
+        await this.botService.sendMessage(phoneNumber, "Error: No amount found in context. Please start over.");
+        context.state = ConversationState.Idle;
+        return { context, shouldDeleteContext: true };
+      }
       await this.botService.sendMessage(phoneNumber, "Please select a valid option from the buttons above.");
       const confirmMessage = `You want to send $${context.amount}. A fee of $${(context.amount * 0.01).toFixed(2)} will be applied. Total: $${(context.amount * 1.01).toFixed(2)}.`;
       const confirmOptions = ['Confirm Transaction', 'Cancel Transaction'];
@@ -51,26 +61,26 @@ export class TransactionHandler {
   }
 
   // Handle send money menu selection
-  async handleSendMoneySelection(phoneNumber: string, context: any) {
+  async handleSendMoneySelection(phoneNumber: string, context: ConversationContext) {
     await this.botService.sendMessage(phoneNumber, "How much would you like to send?");
     context.state = ConversationState.AwaitingAmount;
     return context;
   }
 
   // Handle balance check (placeholder for future implementation)
-  async handleBalanceCheck(phoneNumber: string, userName?: string) {
+  async handleBalanceCheck(phoneNumber: string) {
     await this.botService.sendMessage(phoneNumber, "Your current balance is... (balance check not implemented yet)");
     // This will be updated when balance endpoint is implemented
   }
 
   // Handle transaction status (placeholder for future implementation)
-  async handleTransactionStatus(phoneNumber: string, userName?: string) {
+  async handleTransactionStatus(phoneNumber: string) {
     await this.botService.sendMessage(phoneNumber, "Your recent transactions... (transaction status not implemented yet)");
     // This will be updated when transaction status endpoint is implemented
   }
 
   // Handle help menu selection
-  async handleHelpSelection(phoneNumber: string, userName?: string) {
+  async handleHelpSelection(phoneNumber: string) {
     await this.botService.sendMessage(phoneNumber, "Here are the available commands:\n/send - Send money\n/status - Check transaction status\n/balance - Check your balance\n/menu - Show main menu\n/help - Show this help message");
   }
 

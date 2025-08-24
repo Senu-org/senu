@@ -22,11 +22,11 @@ export class BotService {
         body: message,
       });
       console.log(`Message sent to ${to}: ${message}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`Error sending message to ${to}:`, error);
       
       // Handle rate limiting gracefully
-      if (error.code === 63038) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 63038) {
         console.log(`Rate limit reached for ${to}. Message not sent.`);
         return; // Don't throw error, just log and continue
       }
@@ -47,11 +47,11 @@ export class BotService {
         body: fullMessage,
       });
       console.log(`Message with formatted buttons sent to ${to}: ${fullMessage}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`Error sending message with formatted buttons to ${to}:`, error);
       
       // Handle rate limiting gracefully
-      if (error.code === 63038) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 63038) {
         console.log(`Rate limit reached for ${to}. Message with buttons not sent.`);
         return; // Don't throw error, just log and continue
       }

@@ -3,7 +3,7 @@ import { ConversationHandler } from '@/lib/services/whatsapp-bot/conversationHan
 import { TransactionHandler } from '@/lib/services/whatsapp-bot/transactionHandler';
 import { BalanceHandler } from '@/lib/services/whatsapp-bot/balanceHandler';
 import { NotificationHandler } from '@/lib/services/whatsapp-bot/notificationHandler';
-import { ConversationStateMachine, ConversationState } from '@/lib/services/whatsapp-bot/conversationStateMachine';
+import { ConversationStateMachine, ConversationState } from '@/lib/services/conversationStateMachine';
 import { AuthService } from '@/lib/services/auth';
 import WalletService from '@/lib/services/wallet';
 
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         if (intent === 'menu_selection_1' || intent === 'yes' || intent === 'confirm') {
           // User confirmed the detected country
           try {
-            const user = await AuthService.register(cleanFrom, context.name!, context.country!);
+            await AuthService.register(cleanFrom, context.name!, context.country!);
             const walletService = new WalletService(new (await import('@/lib/repository/JSONrepository')).default());
             await walletService.createWallet(parseInt(cleanFrom));
             await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered and your wallet has been created.`);
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
         
         // Register user with selected country
         try {
-          const user = await AuthService.register(cleanFrom, context.name!, context.country!);
+          await AuthService.register(cleanFrom, context.name!, context.country!);
           const walletService = new WalletService(new (await import('@/lib/repository/JSONrepository')).default());
           await walletService.createWallet(parseInt(cleanFrom));
           await conversationHandler.sendMessage(cleanFrom, `Great! You are now registered with ${context.country} and your wallet has been created.`);
@@ -150,15 +150,15 @@ export async function POST(request: NextRequest) {
           context = await transactionHandler.handleSendMoneySelection(cleanFrom, context);
         } else if (intent === 'menu_selection_2') {
           // Check Balance
-          await balanceHandler.handleBalanceMenuSelection(cleanFrom, existingUser?.name);
+          await balanceHandler.handleBalanceMenuSelection(cleanFrom);
           await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
         } else if (intent === 'menu_selection_3') {
           // Transaction Status
-          await notificationHandler.handleTransactionStatusMenuSelection(cleanFrom, existingUser?.name);
+          await notificationHandler.handleTransactionStatusMenuSelection(cleanFrom);
           await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
         } else if (intent === 'menu_selection_4') {
           // Help
-          await notificationHandler.handleHelpMenuSelection(cleanFrom, existingUser?.name);
+          await notificationHandler.handleHelpMenuSelection(cleanFrom);
           await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser?.name);
         } else if (intent === '/menu') {
           // User typed /menu command
@@ -190,16 +190,16 @@ export async function POST(request: NextRequest) {
           await conversationHandler.sendMessage(cleanFrom, "How much would you like to send?");
           context.state = ConversationState.AwaitingAmount;
         } else if (intent === '/status') {
-          await notificationHandler.handleTransactionStatus(cleanFrom, existingUser?.name);
+          await notificationHandler.handleTransactionStatus(cleanFrom);
         } else if (intent === '/balance') {
-          await balanceHandler.handleBalanceCheck(cleanFrom, existingUser?.name);
+          await balanceHandler.handleBalanceCheck(cleanFrom);
         } else if (intent === '/menu') {
           await transactionHandler.handleMenuCommand(cleanFrom, existingUser?.name);
           context.state = ConversationState.ShowingMenu;
         } else if (intent === '/help') {
-          await notificationHandler.handleHelpCommand(cleanFrom, existingUser?.name);
+          await notificationHandler.handleHelpCommand(cleanFrom);
         } else {
-          await notificationHandler.handleUnknownCommand(cleanFrom, existingUser?.name);
+          await notificationHandler.handleUnknownCommand(cleanFrom);
         }
         break;
       // Other states will be handled here later
@@ -208,7 +208,9 @@ export async function POST(request: NextRequest) {
         break;
     }
 
-    await conversationHandler.saveContext(context);
+    if (context) {
+      await conversationHandler.saveContext(context);
+    }
     
     return NextResponse.json({ success: true })
   } catch (error) {

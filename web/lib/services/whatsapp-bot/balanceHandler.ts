@@ -8,13 +8,13 @@ export class BalanceHandler {
   }
 
   // Handle balance check command
-  async handleBalanceCheck(phoneNumber: string, userName?: string) {
+  async handleBalanceCheck(phoneNumber: string) {
     await this.botService.sendMessage(phoneNumber, "Your current balance is... (balance check not implemented yet)");
     // This will be updated when balance endpoint is implemented
   }
 
   // Handle balance check from menu selection
-  async handleBalanceMenuSelection(phoneNumber: string, userName?: string) {
+  async handleBalanceMenuSelection(phoneNumber: string) {
     await this.botService.sendMessage(phoneNumber, "Your current balance is... (balance check not implemented yet)");
     // This will be updated when balance endpoint is implemented
   }
@@ -25,7 +25,7 @@ export class BalanceHandler {
   }
 
   // Handle balance error (placeholder for future implementation)
-  async handleBalanceError(phoneNumber: string, error: any) {
+  async handleBalanceError(phoneNumber: string, error: Error | unknown) {
     await this.botService.sendMessage(phoneNumber, "Sorry, I couldn't retrieve your balance at the moment. Please try again later.");
     console.error('Balance check error:', error);
   }
