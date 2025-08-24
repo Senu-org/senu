@@ -285,6 +285,8 @@ export function FundingMethods({ phoneNumber, amount }: FundingMethodsProps) {
                   onSubmit={(paymentData) => handlePaymentSubmit(methodId, paymentData)}
                   isLoading={isProcessingPayment}
                   amount={amount || 0}
+                  phoneNumber={phoneNumber || undefined}
+                  receiverPhone={phoneNumber || undefined}
                 />
               </div>
             )}

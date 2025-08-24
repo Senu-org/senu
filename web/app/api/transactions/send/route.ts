@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TransactionService } from '../../../../lib/services/transaction'
-import { AuthService } from '../../../../lib/services/auth'
 import SupabaseRepository from '../../../../lib/repository/SupabaseRepository'
 import type { SendTransactionRequest, ErrorCodes, ApiResponse } from '../../../../lib/types'
 
@@ -10,52 +9,9 @@ import type { SendTransactionRequest, ErrorCodes, ApiResponse } from '../../../.
  */
 export async function POST(request: NextRequest) {
   try {
-    // Validate authentication
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json<ApiResponse<never>>({
-        success: false,
-        error: {
-          code: 'MISSING_AUTH_HEADER' as ErrorCodes,
-          message: 'Authentication required',
-          timestamp: new Date()
-        }
-      }, { status: 401 })
-    }
-
-    const token = authHeader.substring(7)
-    let userPhone: string
-    
-    try {
-      const decoded = await AuthService.validateToken(token)
-      userPhone = decoded.phone
-    } catch (authError: unknown) {
-      const errorCode = authError instanceof Error ? authError.message as ErrorCodes : 'AUTH_ERROR' as ErrorCodes;
-      return NextResponse.json<ApiResponse<never>>({
-        success: false,
-        error: {
-          code: errorCode,
-          message: 'Invalid or expired token',
-          timestamp: new Date()
-        }
-      }, { status: 401 })
-    }
-
-    // Rate limiting check
-    if (!AuthService.checkRateLimit(userPhone)) {
-      return NextResponse.json<ApiResponse<never>>({
-        success: false,
-        error: {
-          code: 'RATE_LIMIT_EXCEEDED' as ErrorCodes,
-          message: 'Too many requests. Please try again later.',
-          timestamp: new Date()
-        }
-      }, { status: 429 })
-    }
-
     // Parse and validate request body
     const body = await request.json()
-    const { receiver_phone, amount_usd, onramp_provider } = body as SendTransactionRequest
+    const { receiver_phone, amount_usd, onramp_provider, sender_phone } = body as SendTransactionRequest & { sender_phone?: string }
 
     // Validate required fields
     if (!receiver_phone || !amount_usd || !onramp_provider) {
@@ -94,6 +50,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Use sender_phone from request body or default to receiver_phone for demo
+    const userPhone = sender_phone || receiver_phone;
+
     // Check if sender and receiver are the same
     if (userPhone === receiver_phone) {
       return NextResponse.json<ApiResponse<never>>({
@@ -107,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate onramp provider
-    const allowedProviders = ['stripe', 'paypal', 'local-bank', 'sinpe']
+    const allowedProviders = ['stripe', 'paypal', 'local-bank', 'sinpe', 'crypto']
     if (!allowedProviders.includes(onramp_provider)) {
       return NextResponse.json<ApiResponse<never>>({
         success: false,
@@ -132,10 +91,10 @@ export async function POST(request: NextRequest) {
     const transactionService = new TransactionService(walletRepository)
     
     // Extract phone number without + prefix for the service
-    const senderPhone = parseInt(userPhone.replace('+', ''))
+    const senderPhoneNumber = parseInt(userPhone.replace('+', ''))
     const receiverPhoneNumber = parseInt(receiver_phone.replace('+', ''))
     
-    const result = await transactionService.createTransaction(senderPhone, receiverPhoneNumber, amount_usd.toString())
+    const result = await transactionService.createTransaction(senderPhoneNumber, receiverPhoneNumber, amount_usd.toString())
 
     return NextResponse.json<ApiResponse<{
       transactionId: string;

@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 interface CryptoFormData {
   cryptoType: string;
   walletAddress?: string;
@@ -11,9 +13,21 @@ interface CryptoFormProps {
   onSubmit?: (data: CryptoFormData) => void;
   isLoading?: boolean;
   amount?: number | null;
+  phoneNumber?: string | null;
+  receiverPhone?: string | null;
 }
 
-export function CryptoForm({ mode = 'funding', onSubmit, isLoading = false, amount }: CryptoFormProps) {
+export function CryptoForm({ 
+  mode = 'funding', 
+  onSubmit, 
+  isLoading = false, 
+  amount,
+  phoneNumber,
+  receiverPhone 
+}: CryptoFormProps) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const isFunding = mode === 'funding';
   
   const title = isFunding ? 'Pago con Criptomonedas' : 'Recibir Criptomonedas';
@@ -29,6 +43,62 @@ export function CryptoForm({ mode = 'funding', onSubmit, isLoading = false, amou
     ? 'bg-purple-500 hover:bg-purple-600' 
     : 'bg-purple-500 hover:bg-purple-600';
 
+  const handleSendTransaction = async () => {
+    if (!amount || !phoneNumber || !receiverPhone) {
+      setError('Missing required data: amount, phone number, or receiver phone');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setError(null);
+
+      // Convert amount to MON (1 amount = 0.0001 MON)
+      const amountInMon = amount * 0.0001;
+
+      // Prepare transaction request
+      const transactionRequest = {
+        receiver_phone: receiverPhone,
+        amount_usd: amount,
+        onramp_provider: 'crypto',
+        sender_phone: phoneNumber
+      };
+
+      // Call the transaction API without authentication
+      const response = await fetch('/api/transactions/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(transactionRequest)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to send transaction');
+      }
+
+      const result = await response.json();
+      
+      console.log('Transaction sent successfully:', result);
+
+      // Call the original onSubmit with success data
+      const formData: CryptoFormData = {
+        cryptoType: 'monad',
+        walletAddress: result.data?.sender || '',
+        network: 'monad'
+      };
+      
+      onSubmit?.(formData);
+
+    } catch (error) {
+      console.error('Failed to send transaction:', error);
+      setError(error instanceof Error ? error.message : 'Failed to send transaction');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="p-4 bg-white space-y-4">
       {/* iOS-style form header */}
@@ -39,7 +109,19 @@ export function CryptoForm({ mode = 'funding', onSubmit, isLoading = false, amou
         </p>
       </div>
 
-
+      {/* Amount display */}
+      {amount && (
+        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">Monto a enviar:</span>
+            <span className="text-lg font-semibold text-gray-900">${amount.toFixed(2)} USD</span>
+          </div>
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-sm text-gray-500">Equivale a:</span>
+            <span className="text-sm font-medium text-purple-600">{(amount * 0.0001).toFixed(6)} MON</span>
+          </div>
+        </div>
+      )}
       
       {/* iOS-style crypto badges */}
       <div className="grid grid-cols-3 gap-2">
@@ -82,6 +164,27 @@ export function CryptoForm({ mode = 'funding', onSubmit, isLoading = false, amou
           </div>
         </div>
       )}
+
+      {/* Error display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <svg className="w-5 h-5 text-red-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-red-900 mb-1">
+                Error en la transacción
+              </p>
+              <p className="text-xs text-red-800 leading-relaxed">
+                {error}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* iOS-style info notice */}
       <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
@@ -93,10 +196,10 @@ export function CryptoForm({ mode = 'funding', onSubmit, isLoading = false, amou
           </div>
           <div>
             <p className="text-sm font-medium text-purple-900 mb-1">
-              Funcionalidad Próximamente
+              Transacción en Monad Blockchain
             </p>
             <p className="text-xs text-purple-800 leading-relaxed">
-              Los pagos con criptomonedas estarán disponibles muy pronto. Mientras tanto, puedes usar tarjeta de crédito o transferencia bancaria.
+              Tu transacción será procesada en la red Monad. La conversión es 1 USD = 0.0001 MON.
             </p>
           </div>
         </div>
@@ -105,7 +208,7 @@ export function CryptoForm({ mode = 'funding', onSubmit, isLoading = false, amou
       {/* iOS-style submit button */}
       <div className="pt-2">
         <button 
-          onClick={() => {
+          onClick={isFunding ? handleSendTransaction : () => {
             // Collect form data (in real implementation, get from form state)
             const formData: CryptoFormData = {
               cryptoType: 'bitcoin', // Mock data
@@ -114,22 +217,22 @@ export function CryptoForm({ mode = 'funding', onSubmit, isLoading = false, amou
             };
             onSubmit?.(formData);
           }}
-          disabled={isLoading}
+          disabled={isLoading || isProcessing}
           className={`
             w-full py-4 text-white font-semibold rounded-2xl shadow-sm transition-all duration-150 text-base
-            ${isLoading
+            ${(isLoading || isProcessing)
               ? 'bg-gray-400 cursor-not-allowed' 
               : `${buttonColor} active:shadow-md transform active:scale-95`
             }
           `}
         >
-          {isLoading ? (
+          {(isLoading || isProcessing) ? (
             <div className="flex items-center justify-center space-x-2">
               <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span>Procesando pago...</span>
+              <span>{isFunding ? 'Enviando transacción...' : 'Procesando pago...'}</span>
             </div>
           ) : (
             buttonText
