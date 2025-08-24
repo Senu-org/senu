@@ -5,7 +5,6 @@ import { BalanceHandler } from '@/lib/services/whatsapp-bot/balanceHandler';
 import { NotificationHandler } from '@/lib/services/whatsapp-bot/notificationHandler';
 import { ConversationStateMachine, ConversationState } from '@/lib/services/conversationStateMachine';
 import { AuthService } from '@/lib/services/auth';
-import WalletService from '@/lib/services/wallet';
 
 const conversationHandler = new ConversationHandler();
 const transactionHandler = new TransactionHandler();
@@ -38,7 +37,7 @@ export async function POST(request: NextRequest) {
     // Extract country information from phone number
     const { cleanFrom, detectedCountry } = conversationHandler.extractPhoneInfo(from);
     
-    console.log(`Phone number: ${cleanFrom}, Detected country: ${detectedCountry}`);
+    console.log(`Phone number: ${cleanFrom}, Detected country: ${detectedCountry}, Message: ${message}`);
 
     let context = await conversationHandler.getContext(cleanFrom);
     
@@ -68,10 +67,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
     
-    const newState = conversationStateMachine.transition(context.state, intent);
-    context.state = newState;
+    // Handle amount input before state transition
+    let handledAmountInput = false;
+    if (context.state === ConversationState.AwaitingAmount && (intent === 'amount_received' || intent === 'text_input')) {
+      context = await transactionHandler.handleAmountInput(cleanFrom, message, context);
+      handledAmountInput = true;
+    } else {
+      const newState = conversationStateMachine.transition(context.state, intent);
+      context.state = newState;
+    }
 
-    switch (newState) {
+    switch (context.state) {
       case ConversationState.AwaitingRegistrationName:
         if (intent === 'text_input') {
           context.name = message;
@@ -86,20 +92,32 @@ export async function POST(request: NextRequest) {
         break;
       case ConversationState.AwaitingCountryConfirmation:
         if (intent === 'menu_selection_1' || intent === 'yes' || intent === 'confirm') {
-          // User confirmed the detected country
-          try {
-            await AuthService.register(cleanFrom, context.name!, context.country!);
-            const walletService = new WalletService(new (await import('@/lib/repository/JSONrepository')).default());
-            await walletService.createWallet(parseInt(cleanFrom));
+                  // User confirmed the detected country
+        try {
+          await AuthService.register(cleanFrom, context.name!, context.country!);
+          
+          // Create wallet by calling the create endpoint
+          const createWalletResponse = await fetch(`${request.nextUrl.origin}/api/wallets/create`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ phoneNumber: parseInt(cleanFrom) }),
+          });
+          
+          if (createWalletResponse.ok) {
             await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered and your wallet has been created.`);
-            await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
-            context.state = ConversationState.ShowingMenu;
-          } catch (error) {
-            console.error('Registration error:', error);
+          } else {
             await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered.`);
-            await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
-            context.state = ConversationState.ShowingMenu;
           }
+          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
+          context.state = ConversationState.ShowingMenu;
+        } catch (error) {
+          console.error('Registration error:', error);
+          await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered.`);
+          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
+          context.state = ConversationState.ShowingMenu;
+        }
         } else if (intent === 'menu_selection_2' || intent === 'no' || intent === 'change') {
           // User wants to change the country
           await conversationHandler.sendCountrySelectionMessage(cleanFrom);
@@ -132,9 +150,21 @@ export async function POST(request: NextRequest) {
         // Register user with selected country
         try {
           await AuthService.register(cleanFrom, context.name!, context.country!);
-          const walletService = new WalletService(new (await import('@/lib/repository/JSONrepository')).default());
-          await walletService.createWallet(parseInt(cleanFrom));
-          await conversationHandler.sendMessage(cleanFrom, `Great! You are now registered with ${context.country} and your wallet has been created.`);
+          
+          // Create wallet by calling the create endpoint
+          const createWalletResponse = await fetch(`${request.nextUrl.origin}/api/wallets/create`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ phoneNumber: parseInt(cleanFrom) }),
+          });
+          
+          if (createWalletResponse.ok) {
+            await conversationHandler.sendMessage(cleanFrom, `Great! You are now registered with ${context.country} and your wallet has been created.`);
+          } else {
+            await conversationHandler.sendMessage(cleanFrom, `Great! You are now registered with ${context.country}.`);
+          }
           await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
           context.state = ConversationState.ShowingMenu;
         } catch (error) {
@@ -167,14 +197,15 @@ export async function POST(request: NextRequest) {
           await transactionHandler.handleInvalidMenuSelection(cleanFrom, existingUser?.name);
         }
         break;
-      case ConversationState.AwaitingAmount:
-        context = await transactionHandler.handleAmountInput(cleanFrom, message, context);
-        break;
+
       case ConversationState.ConfirmingTransaction:
-        const result = await transactionHandler.handleTransactionConfirmation(cleanFrom, intent, context);
-        context = result.context;
-        if (result.shouldDeleteContext) {
-          await conversationHandler.deleteContext(cleanFrom);
+        // Only handle transaction confirmation if we didn't just handle amount input
+        if (!handledAmountInput) {
+          const result = await transactionHandler.handleTransactionConfirmation(cleanFrom, intent, context);
+          context = result.context;
+          if (result.shouldDeleteContext) {
+            await conversationHandler.deleteContext(cleanFrom);
+          }
         }
         break;
       case ConversationState.Idle:

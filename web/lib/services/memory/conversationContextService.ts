@@ -33,11 +33,14 @@ export class ConversationContextService {
       return null;
     }
 
-    // Update last activity
-    context.lastActivity = Date.now();
-    this.contextStore.set(phoneNumber, context);
+    // Update last activity and save back to store
+    const updatedContext = {
+      ...context,
+      lastActivity: Date.now()
+    };
+    this.contextStore.set(context.phoneNumber, updatedContext);
     
-    return context;
+    return updatedContext;
   }
 
   async setContext(context: ConversationContext): Promise<void> {
