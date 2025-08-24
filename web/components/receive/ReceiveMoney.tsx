@@ -1,7 +1,6 @@
 import { ReceiveHero } from './ReceiveHero';
 import { ReceiveMethods } from './ReceiveMethods';
 import { AppHeader } from '../shared';
-import { WalletStatus } from '../shared/WalletStatus';
 
 interface ReceiveMoneyProps {
   phoneNumber?: string | null;
@@ -22,11 +21,6 @@ export function ReceiveMoney({ phoneNumber: _phoneNumber }: ReceiveMoneyProps) {
           {/* Hero section */}
           <div className="px-4 py-6 max-w-sm mx-auto md:max-w-6xl">
             <ReceiveHero />
-          </div>
-          
-          {/* Wallet Status section */}
-          <div className="px-4 pb-6 max-w-sm mx-auto md:max-w-6xl">
-            <WalletStatus />
           </div>
           
           {/* Methods section */}
