@@ -41,23 +41,23 @@ class JSONRepository implements IWalletRepository{
         async getUserShareByPhoneNumber(phoneNumber: number): Promise<string | null> {
             const wallets = await this.readWallets();
             const wallet = wallets.find((w: any) => w.phoneNumber === phoneNumber);
+            if( wallet.encryptedUserShare) console.log('Found wallet share:');
+            else console.log('No encrypted share found for this wallet');
             return wallet ? wallet.encryptedUserShare : null;
         }
 
-        async hasWallet(phoneNumber: number): Promise<boolean> {
+        async getIdByPhoneNumber(phoneNumber: number): Promise<string | null> {
             const wallets = await this.readWallets();
             const wallet = wallets.find((w: any) => w.phoneNumber === phoneNumber);
-            return !!wallet;
+            console.log('Found wallet id:', wallet.id);
+            return wallet ? wallet.id : null;
         }
 
-        async updateBalance(phoneNumber: number, balance: number): Promise<void> {
-            // Not implemented for JSON repository - would require more complex data structure
-            console.log(`JSON Repository: updateBalance not implemented for phone ${phoneNumber}, balance ${balance}`);
-        }
-
-        async updateNonce(phoneNumber: number, nonce: number): Promise<void> {
-            // Not implemented for JSON repository - would require more complex data structure
-            console.log(`JSON Repository: updateNonce not implemented for phone ${phoneNumber}, nonce ${nonce}`);
+        async getAddressByPhoneNumber(phoneNumber: number): Promise<string | null> {
+            const wallets = await this.readWallets();
+            const wallet = wallets.find((w: any) => w.phoneNumber === phoneNumber);
+            console.log('Found wallet id:', wallet.id);
+            return wallet ? wallet.address : null;
         }
         
         private async writeWallets(wallets: any[]): Promise<void> {

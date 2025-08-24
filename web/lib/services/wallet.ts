@@ -1,26 +1,27 @@
-import { Para, Environment, WalletType } from "@getpara/server-sdk";
+import { WalletType } from "@getpara/server-sdk";
 import dotenv from "dotenv";
 import { IWalletRepository } from "../interfaces/IWalletRepository";
 import crypto from "crypto";
+import ParaInstanceManager from "./ParaInstanceManager";
 dotenv.config();
 
-export class WalletService {
-  private paraServer: Para;
+class WalletService {
+
+  private paraManager: ParaInstanceManager;
   private walletRepository: IWalletRepository;
   private encryptionKey: string;
 
   constructor(walletRepository: IWalletRepository) {
-    this.paraServer = new Para(
-      Environment.SANDBOX,
-      process.env.PARA_API_KEY || ""
-    );
+    this.paraManager = ParaInstanceManager.getInstance();
     this.walletRepository = walletRepository;
     this.encryptionKey = process.env.ENCRYPTION_KEY || "";
   }
 
   async createWallet(number: number): Promise<void> {
     try {
-      const hasWallet = await this.paraServer.hasPregenWallet({
+      const paraServer = this.paraManager.getParaServer();
+      
+      const hasWallet = await paraServer.hasPregenWallet({
         pregenId: { phone: `+${number}` },
       });
 
@@ -28,12 +29,12 @@ export class WalletService {
         throw new Error("Wallet already exists for this phone number");
       }
 
-      const generatedWallet = await this.paraServer.createPregenWallet({
+      const generatedWallet = await paraServer.createPregenWallet({
         type: WalletType.EVM,
         pregenId: { phone: `+${number}` },
       });
 
-      const userShare: string = this.paraServer.getUserShare() || "";
+      const userShare: string = paraServer.getUserShare() || '';
       const encryptedShare = this.encryptUserShare(userShare);
 
       const walletData = {
@@ -58,7 +59,8 @@ export class WalletService {
       throw new Error("No wallet found for this phone number");
     }
     const userShare = this.decryptUserShare(userShareEncrypted);
-    this.paraServer.setUserShare(userShare);
+    this.paraManager.setUserShare(userShare);
+    
   }
 
   private encryptUserShare(userShare: string): {
@@ -105,22 +107,7 @@ export class WalletService {
     }
   }
 
-  static async transferBetweenWallets(params: {
-    from_phone: string;
-    to_phone: string;
-    amount_usd: number;
-    transaction_id: string;
-  }) {
-    // Mock implementation - replace with real wallet transfer logic
-    console.log(
-      `Transfer ${params.amount_usd} USD from ${params.from_phone} to ${params.to_phone}`
-    );
 
-    return {
-      blockchain_tx_hash: `0x${Math.random().toString(16).substr(2, 64)}`,
-      estimated_confirmation_time: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
-    };
-  }
 }
 
 export default WalletService;

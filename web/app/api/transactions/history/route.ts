@@ -66,33 +66,33 @@ export async function GET(request: NextRequest) {
     let filteredTransactions = transactions
     
     if (status) {
-      filteredTransactions = filteredTransactions.filter(tx => tx.status === status)
+      filteredTransactions = filteredTransactions.filter((tx: any) => tx.status === status)
     }
     
     if (startDate) {
       const start = new Date(startDate)
-      filteredTransactions = filteredTransactions.filter(tx => tx.created_at >= start)
+      filteredTransactions = filteredTransactions.filter((tx: any) => tx.created_at >= start)
     }
     
     if (endDate) {
       const end = new Date(endDate)
-      filteredTransactions = filteredTransactions.filter(tx => tx.created_at <= end)
+      filteredTransactions = filteredTransactions.filter((tx: any) => tx.created_at <= end)
     }
 
     // Add summary statistics
     const summary = {
       total_transactions: filteredTransactions.length,
       total_sent: filteredTransactions
-        .filter(tx => tx.sender_phone === userPhone)
-        .reduce((sum, tx) => sum + tx.amount_usd, 0),
+        .filter((tx: any) => tx.sender_phone === userPhone)
+        .reduce((sum: number, tx: any) => sum + tx.amount_usd, 0),
       total_received: filteredTransactions
-        .filter(tx => tx.receiver_phone === userPhone)
-        .reduce((sum, tx) => sum + tx.amount_usd, 0),
-      completed_count: filteredTransactions.filter(tx => tx.status === 'completed').length,
-      pending_count: filteredTransactions.filter(tx => 
+        .filter((tx: any) => tx.receiver_phone === userPhone)
+        .reduce((sum: number, tx: any) => sum + tx.amount_usd, 0),
+      completed_count: filteredTransactions.filter((tx: any) => tx.status === 'completed').length,
+      pending_count: filteredTransactions.filter((tx: any) => 
         !['completed', 'failed'].includes(tx.status)
       ).length,
-      failed_count: filteredTransactions.filter(tx => tx.status === 'failed').length
+      failed_count: filteredTransactions.filter((tx: any) => tx.status === 'failed').length
     }
 
     // Set cache headers

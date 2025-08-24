@@ -5,17 +5,51 @@
     "build": {
       "dependsOn": ["^build", "type-check"],
       "outputs": [".next/**", "!.next/cache/**"],
-      "env": ["NODE_ENV", "NEXT_PUBLIC_*"]
+      "env": [
+        "NODE_ENV", 
+        "NEXT_PUBLIC_*",
+        "TWILIO_ACCOUNT_SID",
+        "TWILIO_AUTH_TOKEN",
+        "TWILIO_ACCOUNT_SUBACCOUNT_SID",
+        "DB_URI",
+        "DB_PASSWORD",
+        "VAPID_PRIVATE_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "PARA_API_KEY"
+      ]
     },
     "dev": {
       "cache": false,
       "persistent": true,
-      "env": ["NODE_ENV", "NEXT_PUBLIC_*"]
+      "env": [
+        "NODE_ENV", 
+        "NEXT_PUBLIC_*",
+        "TWILIO_ACCOUNT_SID",
+        "TWILIO_AUTH_TOKEN",
+        "TWILIO_ACCOUNT_SUBACCOUNT_SID",
+        "DB_URI",
+        "DB_PASSWORD",
+        "VAPID_PRIVATE_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "PARA_API_KEY"
+      ]
     },
     "start": {
       "dependsOn": ["build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": [
+        "NODE_ENV", 
+        "NEXT_PUBLIC_*",
+        "TWILIO_ACCOUNT_SID",
+        "TWILIO_AUTH_TOKEN",
+        "TWILIO_ACCOUNT_SUBACCOUNT_SID",
+        "DB_URI",
+        "DB_PASSWORD",
+        "VAPID_PRIVATE_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "PARA_API_KEY"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"],
@@ -23,11 +57,35 @@
     },
     "type-check": {
       "dependsOn": ["^type-check"],
-      "outputs": []
+      "outputs": [],
+      "env": [
+        "NODE_ENV", 
+        "NEXT_PUBLIC_*",
+        "TWILIO_ACCOUNT_SID",
+        "TWILIO_AUTH_TOKEN",
+        "TWILIO_ACCOUNT_SUBACCOUNT_SID",
+        "DB_URI",
+        "DB_PASSWORD",
+        "VAPID_PRIVATE_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "PARA_API_KEY"
+      ]
     },
     "test": {
       "dependsOn": ["^test", "type-check"],
-      "outputs": ["coverage/**"]
+      "outputs": ["coverage/**"],
+      "env": [
+        "NODE_ENV", 
+        "NEXT_PUBLIC_*",
+        "TWILIO_ACCOUNT_SID",
+        "TWILIO_AUTH_TOKEN",
+        "TWILIO_ACCOUNT_SUBACCOUNT_SID",
+        "DB_URI",
+        "DB_PASSWORD",
+        "VAPID_PRIVATE_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "PARA_API_KEY"
+      ]
     },
     "clean": {
       "cache": false,
