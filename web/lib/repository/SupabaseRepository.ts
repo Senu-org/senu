@@ -7,6 +7,12 @@ import { CustodialWallet, User } from "../types";
  * Handles secure storage and retrieval of wallet data and encrypted user shares
  */
 class SupabaseRepository implements IWalletRepository {
+  private buildPhoneCandidates(phoneNumber: number): Array<string | number> {
+    const stringWithoutPlus = String(phoneNumber);
+    const stringWithPlus = `+${stringWithoutPlus}`;
+    return [stringWithPlus, stringWithoutPlus, phoneNumber];
+  }
+
   /**
    * Guarda o actualiza los datos del wallet en la tabla users
    * Mapea: phone -> users.phone, blockchain_address -> users.wallet_address,
@@ -50,28 +56,27 @@ class SupabaseRepository implements IWalletRepository {
     try {
       await setUserContext(`+${phoneNumber}`);
 
-      const { data, error } = await supabaseServer
-        .from(TABLES.USERS)
-        .select("encrypterusershare")
-        .eq("phone", phoneNumber)
-        .single();
+      const candidates = this.buildPhoneCandidates(phoneNumber);
+      for (const candidate of candidates) {
+        const { data, error } = await supabaseServer
+          .from(TABLES.USERS)
+          .select("encrypterusershare")
+          .eq("phone", candidate)
+          .single();
 
-      if (error) {
+        if (!error) {
+          if (!data?.encrypterusershare) return null;
+          return data.encrypterusershare as unknown as string;
+        }
+
         if (error.code === "PGRST116") {
-          console.log(`ℹ️ No user found for phone: +${phoneNumber}`);
-          return null;
+          continue;
         }
         console.error("❌ Error obteniendo user share desde Supabase:", error);
         throw new Error(`Failed to retrieve user share: ${error.message}`);
       }
 
-      if (!data?.encrypterusershare) {
-        console.log(`ℹ️ No encrypted share found for phone: +${phoneNumber}`);
-        return null;
-      }
-
-      console.log(`✅ User share recuperado para el teléfono: +${phoneNumber}`);
-      return data.encrypterusershare as unknown as string;
+      return null;
     } catch (error) {
       console.error(
         "❌ Error en SupabaseRepository.getUserShareByPhoneNumber:",
@@ -99,22 +104,25 @@ class SupabaseRepository implements IWalletRepository {
     try {
       await setUserContext(`+${phoneNumber}`);
 
-      const { data, error } = await supabaseServer
-        .from(TABLES.USERS)
-        .select("id")
-        .eq("phone", phoneNumber)
-        .single();
+      const candidates = this.buildPhoneCandidates(phoneNumber);
+      for (const candidate of candidates) {
+        const { data, error } = await supabaseServer
+          .from(TABLES.USERS)
+          .select("id")
+          .eq("phone", candidate)
+          .single();
 
-      if (error) {
+        if (!error) {
+          return data?.id || null;
+        }
         if (error.code === "PGRST116") {
-          console.log(`ℹ️ No user found for phone: +${phoneNumber}`);
-          return null;
+          continue;
         }
         console.error("❌ Error obteniendo ID desde Supabase:", error);
         throw new Error(`Failed to retrieve wallet ID: ${error.message}`);
       }
 
-      return data?.id || null;
+      return null;
     } catch (error) {
       console.error(
         "❌ Error en SupabaseRepository.getIdByPhoneNumber:",
@@ -131,16 +139,19 @@ class SupabaseRepository implements IWalletRepository {
     try {
       await setUserContext(`+${phoneNumber}`);
 
-      const { data, error } = await supabaseServer
-        .from(TABLES.USERS)
-        .select("wallet_address")
-        .eq("phone", phoneNumber)
-        .single();
+      const candidates = this.buildPhoneCandidates(phoneNumber);
+      for (const candidate of candidates) {
+        const { data, error } = await supabaseServer
+          .from(TABLES.USERS)
+          .select("wallet_address")
+          .eq("phone", candidate)
+          .single();
 
-      if (error) {
+        if (!error) {
+          return data?.wallet_address || null;
+        }
         if (error.code === "PGRST116") {
-          console.log(`ℹ️ No user found for phone: +${phoneNumber}`);
-          return null;
+          continue;
         }
         console.error(
           "❌ Error obteniendo dirección de wallet desde Supabase:",
@@ -149,7 +160,7 @@ class SupabaseRepository implements IWalletRepository {
         throw new Error(`Failed to retrieve wallet address: ${error.message}`);
       }
 
-      return data?.wallet_address || null;
+      return null;
     } catch (error) {
       console.error(
         "❌ Error en SupabaseRepository.getAddressByPhoneNumber:",
@@ -166,7 +177,15 @@ class SupabaseRepository implements IWalletRepository {
   async updateUser(
     phoneNumber: number,
     updates: Partial<
-      Pick<User, "name" | "country" | "wallet_address" | "kyc_status">
+      Pick<
+        User,
+        | "name"
+        | "country"
+        | "wallet_address"
+        | "wallet_address_external"
+        | "type_wallet"
+        | "kyc_status"
+      >
     > & {
       encrypterusershare?: string;
     }
@@ -174,12 +193,15 @@ class SupabaseRepository implements IWalletRepository {
     try {
       const phoneWithPlus = `+${phoneNumber}`;
       await setUserContext(phoneWithPlus);
+      const candidates = this.buildPhoneCandidates(phoneNumber);
 
       // Sanitizar payload para evitar campos vacíos/undefined
       const allowedKeys: Array<keyof typeof updates> = [
         "name",
         "country",
         "wallet_address",
+        "wallet_address_external",
+        "type_wallet",
         "kyc_status",
         "encrypterusershare",
       ];
@@ -192,36 +214,42 @@ class SupabaseRepository implements IWalletRepository {
       );
 
       if (Object.keys(payload).length === 0) {
-        return await (async () => {
+        for (const candidate of candidates) {
           const { data, error } = await supabaseServer
             .from(TABLES.USERS)
             .select("*")
-            .eq("phone", phoneWithPlus)
+            .eq("phone", candidate)
             .single();
-          if (error) {
-            if (error.code === "PGRST116") return null;
-            throw new Error(`Failed to retrieve user: ${error.message}`);
+          if (!error) {
+            return data as unknown as User;
           }
-          return data as unknown as User;
-        })();
+          if (error.code === "PGRST116") {
+            continue;
+          }
+          throw new Error(`Failed to retrieve user: ${error.message}`);
+        }
+        return null;
       }
 
-      const { data, error } = await supabaseServer
-        .from(TABLES.USERS)
-        .update(payload)
-        .eq("phone", phoneWithPlus)
-        .select("*")
-        .single();
+      for (const candidate of candidates) {
+        const { data, error } = await supabaseServer
+          .from(TABLES.USERS)
+          .update(payload)
+          .eq("phone", candidate)
+          .select("*")
+          .single();
 
-      if (error) {
+        if (!error) {
+          return data as unknown as User;
+        }
         if (error.code === "PGRST116") {
-          return null;
+          continue;
         }
         console.error("❌ Error actualizando usuario en Supabase:", error);
         throw new Error(`Failed to update user: ${error.message}`);
       }
 
-      return data as unknown as User;
+      return null;
     } catch (error) {
       console.error("❌ Error en SupabaseRepository.updateUser:", error);
       throw error;
