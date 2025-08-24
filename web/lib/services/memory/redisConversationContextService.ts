@@ -1,4 +1,4 @@
-import { ConversationContext, ConversationState } from '../conversationStateMachine';
+import { ConversationContext } from '../conversationStateMachine';
 
 export class RedisConversationContextService {
   private redis: any; // Redis client

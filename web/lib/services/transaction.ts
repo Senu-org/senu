@@ -1,5 +1,4 @@
-import {parseEther,isAddress,parseGwei, http} from 'viem'
-import { WalletType } from "@getpara/server-sdk";
+import {parseEther,isAddress, http} from 'viem'
 import WalletService from './wallet'
 import { IWalletRepository } from '../interfaces/IWalletRepository';
 import dotenv from "dotenv";
@@ -131,6 +130,7 @@ export class TransactionService {
       }
 
       // Create a new transaction with higher gas price for retry
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const newGasPrice = (originalTx.gasPrice || BigInt(0)) * BigInt(120) / BigInt(100); // 20% increase
       
       // Note: For retry, we would need the original sender's Para account

@@ -1,8 +1,11 @@
 // Notification Service - centralized notification logic
 export class NotificationService {
   static async sendNotification(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     phoneNumber: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     message: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     type: string
   ) {
     // Implementation will be added here
@@ -10,9 +13,11 @@ export class NotificationService {
   }
 
   static async sendTransactionNotification(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     phoneNumber: string,
     status: string,
     data: any,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     message?: string
   ) {
     // Implementation will be added here
@@ -24,7 +29,9 @@ export class NotificationService {
   }
 
   static async createNotificationTemplate(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     templateName: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     content: string
   ) {
     // Implementation will be added here
@@ -32,8 +39,11 @@ export class NotificationService {
   }
 
   static async queueNotification(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     phoneNumber: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     message: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     type: string
   ) {
     // Implementation will be added here

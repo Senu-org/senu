@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     // Wallet transfer logic will be implemented here
     
     return NextResponse.json({ success: true, transactionId: 'temp-id' })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Transfer failed' }, { status: 500 })
   }
 }

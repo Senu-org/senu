@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { TransactionService } from '../../../../lib/services/transaction'
 import { AuthService } from '../../../../lib/services/auth'
 import SupabaseRepository from '../../../../lib/repository/SupabaseRepository'
-import type { SendTransactionRequest, ErrorCodes, ApiResponse, SendTransactionResponse } from '../../../../lib/types'
+import type { SendTransactionRequest, ErrorCodes, ApiResponse } from '../../../../lib/types'
 
 /**
  * POST /api/transactions/send - Create and initiate a new transaction
@@ -120,6 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create transaction using TransactionService
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const transactionRequest: SendTransactionRequest = {
       receiver_phone,
       amount_usd,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TransactionService } from '../../../../../lib/services/transaction'
 import { AuthService } from '../../../../../lib/services/auth'
-import type { ErrorCodes, ApiResponse, TransactionStatusResponse } from '../../../../../lib/types'
+import type { ErrorCodes, ApiResponse } from '../../../../../lib/types'
 
 /**
  * GET /api/transactions/[id]/status - Get transaction status with polling support

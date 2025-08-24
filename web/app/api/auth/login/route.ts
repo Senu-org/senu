@@ -79,11 +79,11 @@ export async function POST(request: NextRequest) {
       } as ApiResponse<LoginResponse>,
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Login error:", error);
 
     // Handle specific error types
-    if (error.message === "INVALID_PHONE") {
+    if (error instanceof Error && error.message === "INVALID_PHONE") {
       return NextResponse.json(
         {
           success: false,
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (error.message === "USER_NOT_FOUND") {
+    if (error instanceof Error && error.message === "USER_NOT_FOUND") {
       return NextResponse.json(
         {
           success: false,

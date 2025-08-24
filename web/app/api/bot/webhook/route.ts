@@ -4,11 +4,14 @@ import { ConversationContextFactory } from '@/lib/services/memory';
 import { ConversationStateMachine, ConversationState } from '@/lib/services/conversationStateMachine';
 import { IntentParser } from '@/lib/services/bot';
 import { AuthService } from '@/lib/services/auth';
-import { WalletService } from '@/lib/services/wallet';
+import WalletService from '@/lib/services/wallet';
+import SupabaseRepository from '@/lib/repository/SupabaseRepository';
 
 const botService = new BotService();
 const conversationContextService = ConversationContextFactory.getInstance();
 const conversationStateMachine = new ConversationStateMachine();
+const walletRepository = new SupabaseRepository();
+const walletService = new WalletService(walletRepository);
 
 // Helper function to send messages with error handling
 async function sendMessage(to: string, message: string) {
@@ -80,8 +83,8 @@ export async function POST(request: NextRequest) {
           context.country = message;
           // Register user and create wallet (temporarily simplified for testing)
           try {
-            const user = await AuthService.register(from, context.name!, context.country!);
-            await WalletService.createWallet(user.id);
+            await AuthService.registerUser(cleanFrom, context.name!, context.country! as 'CR' | 'NI');
+            await walletService.createWallet(parseInt(cleanFrom));
             await sendMessage(cleanFrom, `Thanks, ${context.name}! You are now registered and your wallet has been created.`);
           } catch (error) {
             console.error('Registration error:', error);

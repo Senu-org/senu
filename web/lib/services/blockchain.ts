@@ -1,4 +1,4 @@
-import { publicClient, monadChain, MONAD_CHAIN_ID } from '../utils';
+import { publicClient, monadChain } from '../utils';
 
 /**
  * Blockchain service for common blockchain operations

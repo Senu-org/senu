@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TransactionService } from '../../../../../lib/services/transaction'
 import { AuthService } from '../../../../../lib/services/auth'
-import type { ErrorCodes, ApiResponse, Transaction } from '../../../../../lib/types'
+import type { ErrorCodes, ApiResponse } from '../../../../../lib/types'
 
 /**
  * POST /api/transactions/[id]/retry - Retry a failed transaction
@@ -70,6 +70,7 @@ export async function POST(
     }
 
     // Optional: Parse retry options from request body
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let retryOptions = {}
     try {
       const body = await request.json()
