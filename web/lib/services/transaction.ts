@@ -1,21 +1,22 @@
 import {parseEther,isAddress,parseGwei, http} from 'viem'
-import { Para, Environment, WalletType } from "@getpara/server-sdk";
+import { WalletType } from "@getpara/server-sdk";
 import WalletService from './wallet'
 import { IWalletRepository } from '../interfaces/IWalletRepository';
 import dotenv from "dotenv";
 import { createParaAccount, createParaViemClient } from "@getpara/viem-v2-integration";
 import { monadChain, publicClient, MONAD_RPC_URL } from '../utils';
+import ParaInstanceManager from './ParaInstanceManager';
 dotenv.config();
 
 class TransactionService {
 
   private walletService: WalletService; 
-  private paraServer : Para;
+  private paraManager: ParaInstanceManager;
   private walletRepository: IWalletRepository;
 
   constructor(walletRepository: IWalletRepository) {
     this.walletService = new WalletService(walletRepository);
-    this.paraServer = new Para(Environment.SANDBOX, process.env.PARA_API_KEY || '');
+    this.paraManager = ParaInstanceManager.getInstance();
     this.walletRepository = walletRepository;
   }
 
@@ -47,9 +48,10 @@ class TransactionService {
         throw new Error('Sender wallet not found');
       }
 
-      // Create Para account and Viem client
-      const paraAccount = createParaAccount(this.paraServer as any);
-      const viemClient = createParaViemClient(this.paraServer as any, {
+      // Create Para account and Viem client using shared Para instance
+      const paraServer = this.paraManager.getParaServer();
+      const paraAccount = createParaAccount(paraServer as any);
+      const viemClient = createParaViemClient(paraServer as any, {
         account: paraAccount,
         chain: monadChain,
         transport: http(MONAD_RPC_URL),
@@ -76,6 +78,9 @@ class TransactionService {
       // Wait for transaction confirmation
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       
+      // Clear user share for security
+      this.paraManager.clearUserShare();
+      
       // Return transaction details
       return {
         transactionId: hash,
@@ -90,6 +95,8 @@ class TransactionService {
       };
 
     } catch (error) {
+      // Clear user share on error for security
+      this.paraManager.clearUserShare();
       console.error('Error creating transaction:', error);
       throw error;
     }

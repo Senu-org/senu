@@ -1,25 +1,27 @@
-import { Para, Environment, WalletType } from "@getpara/server-sdk";
+import { WalletType } from "@getpara/server-sdk";
 import dotenv from "dotenv";
 import { IWalletRepository } from "../interfaces/IWalletRepository";
 import crypto from "crypto";
+import ParaInstanceManager from "./ParaInstanceManager";
 dotenv.config();
 
 class WalletService {
 
-  private paraServer : Para;
+  private paraManager: ParaInstanceManager;
   private walletRepository: IWalletRepository;
   private encryptionKey: string;
 
   constructor(walletRepository: IWalletRepository) {
-    this.paraServer = new Para(Environment.SANDBOX, process.env.PARA_API_KEY || '');
+    this.paraManager = ParaInstanceManager.getInstance();
     this.walletRepository = walletRepository;
     this.encryptionKey = process.env.ENCRYPTION_KEY || '';
   }
 
   async createWallet(number: number): Promise<void> {
     try {
+      const paraServer = this.paraManager.getParaServer();
       
-      const hasWallet = await this.paraServer.hasPregenWallet({
+      const hasWallet = await paraServer.hasPregenWallet({
         pregenId: { phone: `+${number}` },
       });
       
@@ -27,12 +29,12 @@ class WalletService {
         throw new Error('Wallet already exists for this phone number');
       }
 
-      const generatedWallet = await this.paraServer.createPregenWallet({
+      const generatedWallet = await paraServer.createPregenWallet({
         type: WalletType.EVM,
         pregenId: { phone: `+${number}` },
       });
 
-      const userShare: string = this.paraServer.getUserShare() || '';
+      const userShare: string = paraServer.getUserShare() || '';
       const encryptedShare = this.encryptUserShare(userShare);
 
       const walletData = {
@@ -57,7 +59,7 @@ class WalletService {
       throw new Error('No wallet found for this phone number');
     }
     const userShare = this.decryptUserShare(userShareEncrypted);
-    this.paraServer.setUserShare(userShare);
+    this.paraManager.setUserShare(userShare);
     
   }
 
