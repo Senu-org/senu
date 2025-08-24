@@ -54,7 +54,7 @@ class WalletService {
           blockchain_address: generatedWallet.address || "",
           private_key_ref: JSON.stringify(encryptedShare),
           type_wallet: WalletType.EVM,
-          encrypterUserShare: JSON.stringify(encryptedShare),
+          encrypterusershare: JSON.stringify(encryptedShare),
           nonce: 0,
           balance_usd: 0,
           created_at: new Date(),
@@ -68,7 +68,7 @@ class WalletService {
           blockchain_address: `0x${number.toString().padStart(40, '0')}`, // Placeholder address
           private_key_ref: JSON.stringify({ encrypted: '', iv: '', tag: '' }),
           type_wallet: WalletType.EVM,
-          encrypterUserShare: JSON.stringify({ encrypted: '', iv: '', tag: '' }),
+          encrypterusershare: JSON.stringify({ encrypted: '', iv: '', tag: '' }),
           nonce: 0,
           balance_usd: 0,
           created_at: new Date(),

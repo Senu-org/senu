@@ -25,7 +25,8 @@ class SupabaseRepository implements IWalletRepository {
       const upsertPayload = {
         phone: walletData.user_phone,
         wallet_address: walletData.blockchain_address,
-        encrypterUserShare: walletData.private_key_ref,
+        encrypterusershare: walletData.private_key_ref,
+        type_wallet: walletData.type_wallet,
         id: walletData.id,
       } as const;
 

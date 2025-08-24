@@ -43,9 +43,9 @@ class JSONRepository implements IWalletRepository {
     const wallet = wallets.find(
       (w: CustodialWallet) => String(w.user_phone) === String(phoneNumber)
     );
-    if (wallet?.encrypterUserShare) console.log("Found wallet share:");
+    if (wallet?.encrypterusershare) console.log("Found wallet share:");
     else console.log("No encrypted share found for this wallet");
-    return wallet?.encrypterUserShare || null;
+    return wallet?.encrypterusershare || null;
   }
 
   async getIdByPhoneNumber(phoneNumber: number): Promise<string | null> {
