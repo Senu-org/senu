@@ -19,4 +19,9 @@ export const config = {
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '10'),
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000'), // 1 minute
   },
+  reown: {
+    projectId: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID || 'temp-project-id',
+    clientId: process.env.NEXT_PUBLIC_REOWN_CLIENT_ID || 'temp-client-id',
+    gaslessEnabled: process.env.NEXT_PUBLIC_REOWN_GASLESS_ENABLED === 'true',
+  },
 };

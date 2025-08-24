@@ -89,9 +89,14 @@ export async function POST(request: NextRequest) {
       user,
       wallet: {
         id: "pending",
-        phone: parseInt(phone.replace('+', '')),
-        wallet_address: user.wallet_address, // Temporary address
+        user_phone: parseInt(phone.replace('+', '')),
+        blockchain_address: user.wallet_address, // Temporary address
+        type_wallet: "custodial",
         encrypterUserShare: "pending",
+        private_key_ref: "pending_wallet_creation",
+        balance_usd: 0,
+        nonce: 0,
+        created_at: new Date(),
       },
     };
 

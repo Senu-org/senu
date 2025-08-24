@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { BankAccountForm, CryptoForm } from '../shared/forms';
+import { useWalletKit } from '../providers/WalletKitProvider';
 
 interface ReceiveMethod {
   id: string;
@@ -23,7 +24,7 @@ const receiveMethods: ReceiveMethod[] = [
     id: 'crypto',
     name: 'Wallet de Criptomonedas',
     icon: '₿',
-    available: false,
+    available: true,
     description: 'Recibe Bitcoin, USDC y Ethereum en tu wallet'
   }
 ];
@@ -31,10 +32,62 @@ const receiveMethods: ReceiveMethod[] = [
 export function ReceiveMethods() {
   const [expandedMethod, setExpandedMethod] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [recentTransactions, setRecentTransactions] = useState<Array<{
+    hash: string;
+    amount: string;
+    from: string;
+    status: 'pending' | 'confirmed' | 'failed';
+    timestamp: Date;
+  }>>([]);
+  
+  // Use the unified wallet hook
+  const {
+    isConnected,
+    address: walletAddress,
+    balance: walletBalance,
+    isConnecting: isWalletConnecting,
+    connect: connectWallet,
+    isConnectedToMonad,
+    switchToMonad,
+    error: walletError
+  } = useWalletKit();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Handle wallet connection
+  const handleConnectWallet = async () => {
+    try {
+      await connectWallet();
+      
+      // If not connected to Monad, try to switch
+      if (isConnected && !isConnectedToMonad) {
+        await switchToMonad();
+      }
+      
+      // Start monitoring for incoming transactions
+      if (walletAddress) {
+        startTransactionMonitoring(walletAddress);
+      }
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+      alert('Failed to connect wallet. Please try again.');
+    }
+  };
+
+  // Transaction monitoring function
+  const startTransactionMonitoring = (address: string) => {
+    // TODO: Implement real transaction monitoring
+    // This would poll the Monad RPC for incoming transactions
+    console.log('Started monitoring transactions for address:', address);
+    
+    // For now, simulate transaction monitoring
+    setInterval(() => {
+      // Check for new transactions
+      console.log('Checking for new transactions...');
+    }, 30000); // Check every 30 seconds
+  };
 
   // Use safe defaults for SSR to prevent hydration mismatch
   const safeExpandedMethod = mounted ? expandedMethod : null;
@@ -120,7 +173,123 @@ Tipo: Cuenta Corriente Colones
       case 'bank':
         return <BankAccountForm mode="receiving" />;
       case 'crypto':
-        return <CryptoForm mode="receiving" />;
+        return (
+          <div className="p-4 space-y-4">
+            {!isConnected ? (
+              <div className="text-center">
+                <div className="mb-4">
+                  <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-2xl">₿</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Conecta tu Wallet</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Conecta tu wallet para recibir criptomonedas
+                  </p>
+                  {walletError && (
+                    <p className="text-sm text-red-500 mb-4">
+                      Error: {walletError}
+                    </p>
+                  )}
+                </div>
+                <appkit-button />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-purple-50 rounded-2xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">Wallet Conectada</span>
+                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">Conectado</span>
+                  </div>
+                  <div className="text-xs text-gray-500 font-mono break-all">
+                    {walletAddress}
+                  </div>
+                  {!isConnectedToMonad && (
+                    <div className="mt-2">
+                      <button
+                        onClick={switchToMonad}
+                        className="text-xs text-purple-600 hover:text-purple-700"
+                      >
+                        Cambiar a red Monad
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="bg-gray-50 rounded-2xl p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Balance MONAD</span>
+                    <span className="text-lg font-semibold text-gray-900">{walletBalance}</span>
+                  </div>
+                </div>
+                
+                {/* QR Code for wallet address */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-4">
+                  <div className="text-center">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Código QR</h4>
+                    <div className="w-48 h-48 bg-gray-100 rounded-lg mx-auto flex items-center justify-center">
+                      <span className="text-xs text-gray-500">QR Code</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Escanea para compartir tu dirección
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Copy address button */}
+                <button
+                  onClick={() => {
+                    if (walletAddress) {
+                      navigator.clipboard.writeText(walletAddress);
+                      alert('Dirección copiada al portapapeles');
+                    }
+                  }}
+                  className="w-full py-3 bg-purple-600 text-white font-semibold rounded-2xl transition-colors flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span>Copiar Dirección</span>
+                </button>
+                
+                {/* Recent Transactions */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3">Transacciones Recientes</h4>
+                  {recentTransactions.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-xs text-gray-500">No hay transacciones recientes</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {recentTransactions.map((tx, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <p className="text-xs font-mono text-gray-600 truncate">{tx.hash}</p>
+                            <p className="text-xs text-gray-500">De: {tx.from}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-gray-900">{tx.amount} MONAD</p>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              tx.status === 'confirmed' ? 'bg-green-100 text-green-600' :
+                              tx.status === 'pending' ? 'bg-yellow-100 text-yellow-600' :
+                              'bg-red-100 text-red-600'
+                            }`}>
+                              {tx.status === 'confirmed' ? 'Confirmado' :
+                               tx.status === 'pending' ? 'Pendiente' : 'Fallido'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <CryptoForm 
+                  mode="receiving" 
+                />
+              </div>
+            )}
+          </div>
+        );
       default:
         return null;
     }
