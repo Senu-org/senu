@@ -85,13 +85,11 @@ The goal is to create a new dashboard within the application that displays all i
 
 *   **`web/app/transactions/page.tsx`**: This will be the main page component for the transaction dashboard.
     *   [x] It will orchestrate data fetching, state management, and rendering of child components.
-*   **`web/components/transactions/TransactionDashboard.tsx` (New)**: A new component to serve as the container for the dashboard.
-    *   [ ] Will include the tab navigation and the transaction table.
-*   **`web/components/transactions/TransactionTabs.tsx` (New)**: A new component for tab-based navigation (e.g., All, Sent, Received).
-*   **`web/components/transactions/TransactionTable.tsx` (New)**: A new component to display the list of transactions in a responsive table format.
-    *   [x] A basic table implementation is present within `web/app/transactions/page.tsx`.
-*   **`web/lib/interfaces/ITransactionRepository.ts` (New)**: An interface to define the contract for transaction data access.
-*   **`web/lib/repository/EnvioTransactionRepository.ts` (New)**: A concrete implementation of `ITransactionRepository` that interacts with the Envio indexer.
+*   **`web/components/transactions/TransactionDashboard.tsx`**: A new component to serve as the container for the dashboard.
+    *   [x] Will include the tab navigation and the transaction table.
+*   **`web/components/transactions/TransactionTabs.tsx`**: A new component for tab-based navigation (e.g., All, Sent, Received).
+*   **`web/components/transactions/TransactionTable.tsx`**: A new component to display the list of transactions in a responsive table format.
+*   **`web/lib/repository/EnvioTransactionRepository.ts`**: A concrete implementation of `ITransactionRepository` that interacts with the Envio indexer.
 
 ### Data Models
 
@@ -99,13 +97,3 @@ The goal is to create a new dashboard within the application that displays all i
     *   [x] `ITransaction` is defined and used, including `id`, `type`, `amount`, `currency`, `status`, `timestamp`, `blockchainTxId`, `monadExplorerUrl`.
 
 ### Technology Stack
-
-*   **Frontend:** Next.js, React, Tailwind CSS
-*   **Backend:** Next.js API Routes
-*   **Data Indexer:** Envio (https://envio.dev/)
-*   **Blockchain Explorer:** Monad Explorer
-*   **State Management (Frontend):** React Query (for data fetching and caching), Zustand (for global UI state)
-
-### Mock Data (for initial development)
-
-*   [ ] Consider creating a mock API endpoint or a mock `EnvioTransactionRepository` to enable parallel frontend and backend development.

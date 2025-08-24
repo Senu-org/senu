@@ -1,11 +1,7 @@
-import {
-  Transactions_Transaction_handler,
-  Transactions_Transfer_handler,
-} from "generated/src/Handlers.gen";
-import { Transaction_t as TransactionEntity } from "generated/src/db/Entities.gen";
+const { Transactions } = require("generated");
 
-Transactions_Transaction_handler(async ({ event, context }) => {
-  const transaction: TransactionEntity = {
+Transactions.Transaction.handler(async ({ event, context }) => {
+  const transaction = {
     id: event.transaction.hash + "-" + event.logIndex,
     from: event.params.from,
     to: event.params.to,
@@ -19,8 +15,8 @@ Transactions_Transaction_handler(async ({ event, context }) => {
   context.Transaction.set(transaction);
 });
 
-Transactions_Transfer_handler(async ({ event, context }) => {
-  const transaction: TransactionEntity = {
+Transactions.Transfer.handler(async ({ event, context }) => {
+  const transaction = {
     id: event.transaction.hash + "-" + event.logIndex,
     from: event.params.from,
     to: event.params.to,

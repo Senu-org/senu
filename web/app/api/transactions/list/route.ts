@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TransactionService } from '@/web/lib/services/transaction';
-import { auth } from '@/web/lib/services/auth';
+import { EnvioTransactionRepository } from '@/lib/repository/EnvioTransactionRepository';
+import { auth } from '@/lib/services/auth';
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
     }
 
     const phoneNumber = session.user.phoneNumber;
-    const transactions = await TransactionService.getTransactionsByPhoneNumber(phoneNumber);
+    const transactionRepository = new EnvioTransactionRepository();
+    const transactions = await transactionRepository.getTransactionsByPhoneNumber(phoneNumber);
 
     return NextResponse.json(transactions);
   } catch (error) {

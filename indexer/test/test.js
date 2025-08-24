@@ -1,5 +1,5 @@
-import assert from "assert";
-import { TestHelpers, Account } from "generated";
+const assert = require("assert");
+const { TestHelpers } = require("generated");
 const { MockDb, ERC20, Addresses } = TestHelpers;
 
 describe("Transfers", () => {
@@ -12,7 +12,7 @@ describe("Transfers", () => {
     const userAddress2 = Addresses.mockAddresses[1];
 
     //Make a mock entity to set the initial state of the mock db
-    const mockAccountEntity: Account = {
+    const mockAccountEntity = {
       id: userAddress1,
       balance: 5n,
     };
@@ -30,8 +30,8 @@ describe("Transfers", () => {
     });
 
     //Process the mockEvent
-    //Note: processEvent functions do not mutate the mockDb, they return a new
-    //mockDb with with modified state
+    //This takes in the mockDb and returns a new updated mockDb.
+    //The initial mockDb is not mutated with processEvent
     const mockDbAfterTransfer = await ERC20.Transfer.processEvent({
       event: mockTransfer,
       mockDb,

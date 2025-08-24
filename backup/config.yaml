@@ -8,7 +8,7 @@ networks:
     contracts:
       - name: "Transactions"
         address: "0x0000000000000000000000000000000000000000" # Replace with actual contract address
-        handler: src/EventHandlers.js
+        handler: src/EventHandlers.ts
         events:
           - event: "Transfer(address indexed from, address indexed to, uint256 value)"
           - event: "Transaction(address indexed from, address indexed to, uint256 amount, string currency)"

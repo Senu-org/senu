@@ -191,3 +191,16 @@ declare global {
     };
   }
 }
+
+export interface ITransaction {
+  id: string;
+  senderPhone?: string;
+  receiverPhone?: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed' | string;
+  timestamp: string;
+  type: 'sent' | 'received' | string;
+  blockchainTxId?: string;
+  monadExplorerUrl?: string;
+}

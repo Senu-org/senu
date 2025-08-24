@@ -68,8 +68,8 @@ let registerContractHandlers = (
 let registerAllHandlers = () => {
   registerContractHandlers(
     ~contractName="Transactions",
-    ~handlerPathRelativeToRoot="src/EventHandlers.ts",
-    ~handlerPathRelativeToConfig="src/EventHandlers.ts",
+    ~handlerPathRelativeToRoot="src/EventHandlers.js",
+    ~handlerPathRelativeToConfig="src/EventHandlers.js",
   )
 
   let generatedConfig = makeGeneratedConfig()
