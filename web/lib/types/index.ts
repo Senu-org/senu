@@ -80,6 +80,8 @@ export interface CustodialWallet {
   encrypterUserShare: string;
 }
 
+
+
 // API Request/Response Types
 export interface RegisterUserRequest {
   phone: string;
