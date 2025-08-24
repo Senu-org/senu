@@ -69,9 +69,16 @@ export class ApiService {
 
   // Wallet endpoints - using user endpoint to get wallet data
   async getWalletAddress(phone: number) {
-    const response = await this.request<{ wallet_address?: string }>(`/api/users/${phone}`);
-    if (response.data && response.data.wallet_address) {
-      return { data: { wallet_address: response.data.wallet_address }, error: undefined, status: response.status };
+    const response = await this.request<{ wallet_address?: string; wallet_address_external?: string }>(`/api/users/${phone}`);
+    if (response.data && (response.data.wallet_address_external || response.data.wallet_address)) {
+      return { 
+        data: { 
+          wallet_address: response.data.wallet_address,
+          wallet_address_external: response.data.wallet_address_external
+        }, 
+        error: undefined, 
+        status: response.status 
+      };
     }
     return { data: undefined, error: 'Wallet address not found', status: 404 };
   }
