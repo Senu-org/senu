@@ -70,9 +70,11 @@ export function FundingMethods({ phoneNumber, amount }: FundingMethodsProps) {
     balance: walletBalance,
     isConnecting: isWalletConnecting,
     connect: connectWallet,
+    disconnect: disconnectWallet,
     isConnectedToMonad,
     switchToMonad,
-    error: walletError
+    error: walletError,
+    refreshBalance
   } = useWalletKit();
 
   useEffect(() => {
@@ -126,6 +128,25 @@ export function FundingMethods({ phoneNumber, amount }: FundingMethodsProps) {
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       alert('Failed to connect wallet. Please try again.');
+    }
+  };
+
+  // Handle wallet disconnection
+  const handleDisconnectWallet = async () => {
+    try {
+      await disconnectWallet();
+    } catch (error) {
+      console.error('Failed to disconnect wallet:', error);
+      alert('Failed to disconnect wallet. Please try again.');
+    }
+  };
+
+  // Handle balance refresh
+  const handleRefreshBalance = async () => {
+    try {
+      await refreshBalance();
+    } catch (error) {
+      console.error('Failed to refresh balance:', error);
     }
   };
 
@@ -230,33 +251,22 @@ export function FundingMethods({ phoneNumber, amount }: FundingMethodsProps) {
                     </p>
                   )}
                 </div>
-                <button
-                  onClick={handleConnectWallet}
-                  disabled={isWalletConnecting}
-                  className={`
-                    w-full py-3 px-4 rounded-2xl font-semibold transition-all duration-200
-                    ${isWalletConnecting 
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : 'bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800'
-                    }
-                  `}
-                >
-                  {isWalletConnecting ? (
-                    <div className="flex items-center justify-center">
-                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Conectando...
-                    </div>
-                  ) : (
-                    'Conectar Wallet'
-                  )}
-                </button>
+                <appkit-button />
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="bg-purple-50 rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700">Wallet Conectada</span>
-                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">Conectado</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">Conectado</span>
+                      <button
+                        onClick={handleDisconnectWallet}
+                        className="text-xs text-red-600 hover:text-red-700 px-2 py-1 rounded-full border border-red-200 hover:bg-red-50"
+                      >
+                        Desconectar
+                      </button>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500 font-mono break-all">
                     {walletAddress}
@@ -276,7 +286,16 @@ export function FundingMethods({ phoneNumber, amount }: FundingMethodsProps) {
                 <div className="bg-gray-50 rounded-2xl p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700">Balance MONAD</span>
-                    <span className="text-lg font-semibold text-gray-900">{walletBalance}</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg font-semibold text-gray-900">{walletBalance}</span>
+                      <button
+                        onClick={handleRefreshBalance}
+                        className="text-xs text-purple-600 hover:text-purple-700 p-1 rounded-full hover:bg-purple-50"
+                        title="Refresh balance"
+                      >
+                        ↻
+                      </button>
+                    </div>
                   </div>
                 </div>
                 
