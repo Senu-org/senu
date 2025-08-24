@@ -1,11 +1,12 @@
 import { ConversationContextService } from './conversationContextService';
 import { RedisConversationContextService } from './redisConversationContextService';
+import { ConversationContext } from '../conversationStateMachine';
 
 export type ConversationContextType = 'memory' | 'redis';
 
 export interface IConversationContextService {
-  getContext(phoneNumber: string): Promise<any>;
-  setContext(context: any): Promise<void>;
+  getContext(phoneNumber: string): Promise<ConversationContext | null>;
+  setContext(context: ConversationContext): Promise<void>;
   deleteContext(phoneNumber: string): Promise<void>;
   getActiveSessionCount(): number | Promise<number>;
   cleanup(): void | Promise<void>;

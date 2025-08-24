@@ -10,7 +10,7 @@ export async function GET(
     // Wallet balance logic will be implemented here
     
     return NextResponse.json({ balance: '0', phone })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to get balance' }, { status: 500 })
   }
 }

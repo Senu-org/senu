@@ -1,7 +1,14 @@
-import { ConversationContext, ConversationState } from '../conversationStateMachine';
+import { ConversationContext } from '../conversationStateMachine';
+
+interface RedisClient {
+  get(key: string): Promise<string | null>;
+  setex(key: string, ttl: number, value: string): Promise<void>;
+  del(...keys: string[]): Promise<void>;
+  keys(pattern: string): Promise<string[]>;
+}
 
 export class RedisConversationContextService {
-  private redis: any; // Redis client
+  private redis: RedisClient | null; // Redis client
   private readonly SESSION_TIMEOUT = 30 * 60; // 30 minutes in seconds
   private readonly KEY_PREFIX = 'conversation:';
 
@@ -9,6 +16,7 @@ export class RedisConversationContextService {
     // Initialize Redis client
     // You can use any Redis client like 'redis', 'ioredis', etc.
     // For this example, we'll assume you have Redis configured
+    this.redis = null;
     this.initializeRedis();
   }
 

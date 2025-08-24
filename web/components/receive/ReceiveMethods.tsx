@@ -46,6 +46,7 @@ export function ReceiveMethods() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const BankTransferInfo = () => (
     <div className="p-4 bg-gray-50 border-t border-gray-200 space-y-4">
       <div className="text-center">

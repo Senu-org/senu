@@ -5,15 +5,13 @@ import { BalanceHandler } from '@/lib/services/whatsapp-bot/balanceHandler';
 import { NotificationHandler } from '@/lib/services/whatsapp-bot/notificationHandler';
 import { ConversationStateMachine, ConversationState } from '@/lib/services/whatsapp-bot/conversationStateMachine';
 import { AuthService } from '@/lib/services/auth';
-import { WalletService } from '@/lib/services/wallet';
+import WalletService from '@/lib/services/wallet';
 
 const conversationHandler = new ConversationHandler();
 const transactionHandler = new TransactionHandler();
 const balanceHandler = new BalanceHandler();
 const notificationHandler = new NotificationHandler();
 const conversationStateMachine = new ConversationStateMachine();
-
-
 
 export async function POST(request: NextRequest) {
   try {
@@ -91,7 +89,8 @@ export async function POST(request: NextRequest) {
           // User confirmed the detected country
           try {
             const user = await AuthService.register(cleanFrom, context.name!, context.country!);
-            await WalletService.createWallet(user.id);
+            const walletService = new WalletService(new (await import('@/lib/repository/JSONrepository')).default());
+            await walletService.createWallet(parseInt(cleanFrom));
             await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered and your wallet has been created.`);
             await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
             context.state = ConversationState.ShowingMenu;
@@ -133,7 +132,8 @@ export async function POST(request: NextRequest) {
         // Register user with selected country
         try {
           const user = await AuthService.register(cleanFrom, context.name!, context.country!);
-          await WalletService.createWallet(user.id);
+          const walletService = new WalletService(new (await import('@/lib/repository/JSONrepository')).default());
+          await walletService.createWallet(parseInt(cleanFrom));
           await conversationHandler.sendMessage(cleanFrom, `Great! You are now registered with ${context.country} and your wallet has been created.`);
           await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
           context.state = ConversationState.ShowingMenu;

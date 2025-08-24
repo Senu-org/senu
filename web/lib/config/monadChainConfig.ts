@@ -1,27 +1,20 @@
-import { http, defineChain } from "viem";
+import { http } from "viem";
 import { createParaViemClient, createParaAccount } from "@getpara/viem-v2-integration";
 import { Para, Environment } from "@getpara/server-sdk";
+import { monadChain, MONAD_RPC_URL } from '../utils';
 import dotenv from "dotenv";
 dotenv.config();
 
 const para = new Para(Environment.SANDBOX, process.env.PARA_API_KEY || '');
 
-// Define Monad chain
-const monad = defineChain({
-  id: 10143,
-  name: "Monad Testnet",
-  nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
-  rpcUrls: {
-    default: { http: ["https://testnet-rpc.monad.xyz"] },
-  },
-});
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const account = createParaAccount(para as any);
 
-const account =  createParaAccount(para as any);
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const walletClient = createParaViemClient(para as any, {
   account,
-  chain: monad,
-  transport: http("https://testnet-rpc.monad.xyz"), 
+  chain: monadChain,
+  transport: http(MONAD_RPC_URL), 
 });
 
-export {walletClient};
+export { walletClient, monadChain, account };

@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+interface Subscription {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
 // En una aplicación real, esto se almacenaría en una base de datos
 // Por ahora usamos el mismo Map que en subscribe
-const subscriptions = new Map<string, any>();
+const subscriptions = new Map<string, Subscription>();
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,4 +1,4 @@
-import { ConversationContext, ConversationState } from '../conversationStateMachine';
+import { ConversationContext } from '../conversationStateMachine';
 
 export class ConversationContextService {
   private static instance: ConversationContextService;

@@ -61,7 +61,6 @@ export class BotService {
     }
   }
 }
-
 export class IntentParser {
   parse(message: string): string {
     const lowerCaseMessage = message.toLowerCase().trim();

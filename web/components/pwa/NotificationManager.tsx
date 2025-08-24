@@ -14,7 +14,6 @@ export function NotificationManager({ children }: NotificationManagerProps) {
     permission,
     isSubscribed,
     isLoading,
-    requestPermission,
     subscribe,
     unsubscribe,
     showNotification,

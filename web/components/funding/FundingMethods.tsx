@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CreditCardForm, CryptoForm } from '../shared/forms';
 import { CompletionAnimation } from '../shared';
 import { config } from '@/lib/config/env';
@@ -31,6 +31,25 @@ interface FundingMethodsProps {
   phoneNumber?: string | null;
 }
 
+interface WalletData {
+  walletId: string;
+  phoneNumber: string;
+  createdAt: string;
+}
+
+type CreditCardFormData = {
+  cardNumber: string;
+  expiryDate: string;
+  cvv: string;
+  holderName: string;
+}
+
+type CryptoFormData = {
+  cryptoType: string;
+  walletAddress?: string;
+  network?: string;
+}
+
 export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
   const [expandedMethod, setExpandedMethod] = useState<string | null>(null);
   const [showCompletion, setShowCompletion] = useState(false);
@@ -40,20 +59,13 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
   
   // Wallet creation states
   const [walletCreationStatus, setWalletCreationStatus] = useState<'creating' | 'success' | 'error' | null>(null);
-  const [walletData, setWalletData] = useState<any>(null);
+  const [walletData, setWalletData] = useState<WalletData | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Background wallet creation on component mount
-  useEffect(() => {
-    if (phoneNumber && mounted) {
-      createWalletInBackground();
-    }
-  }, [phoneNumber, mounted]);
-
-  const createWalletInBackground = async () => {
+  const createWalletInBackground = useCallback(async () => {
     if (!phoneNumber) return;
     
     try {
@@ -65,7 +77,7 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
       // Simulate wallet creation (remove when implementing real API)
       await new Promise(resolve => setTimeout(resolve, 3000));
       
-      const mockWalletData = {
+      const mockWalletData: WalletData = {
         walletId: `wallet_${Date.now()}`,
         phoneNumber,
         createdAt: new Date().toISOString()
@@ -79,7 +91,14 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
       console.error('Background wallet creation failed:', error);
       setWalletCreationStatus('error');
     }
-  };
+  }, [phoneNumber]);
+
+  // Background wallet creation on component mount
+  useEffect(() => {
+    if (phoneNumber && mounted) {
+      createWalletInBackground();
+    }
+  }, [phoneNumber, mounted, createWalletInBackground]);
 
   const handleMethodClick = (methodId: string) => {
     const method = paymentMethods.find(m => m.id === methodId);
@@ -88,7 +107,7 @@ export function FundingMethods({ phoneNumber }: FundingMethodsProps) {
     }
   };
 
-  const handlePaymentSubmit = async (methodId: string, paymentData: any) => {
+  const handlePaymentSubmit = async (methodId: string, paymentData: CreditCardFormData | CryptoFormData) => {
     const method = paymentMethods.find(m => m.id === methodId);
     if (!method) return;
 

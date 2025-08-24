@@ -57,7 +57,7 @@ export function NativeNotificationPrompt({
           {/* Contenido */}
           <div className="px-6 pb-6 text-center">
             <h2 className="text-lg font-semibold text-gray-900 mb-2 leading-tight">
-              "Senu" quiere enviarte notificaciones
+              &ldquo;Senu&rdquo; quiere enviarte notificaciones
             </h2>
             <p className="text-sm text-gray-600 mb-8 leading-relaxed px-2">
               Las notificaciones pueden incluir alertas, sonidos e insignias de iconos. Estas se pueden configurar en Ajustes.

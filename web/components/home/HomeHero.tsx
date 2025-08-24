@@ -1,5 +1,4 @@
 import { config } from '@/lib/config/env';
-import Link from 'next/link';
 
 export function HomeHero() {
   return (

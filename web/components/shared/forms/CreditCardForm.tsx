@@ -1,8 +1,15 @@
 'use client';
 
+interface CreditCardFormData {
+  cardNumber: string;
+  expiryDate: string;
+  cvv: string;
+  holderName: string;
+}
+
 interface CreditCardFormProps {
   mode?: 'funding' | 'receiving';
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: CreditCardFormData) => void;
   isLoading?: boolean;
 }
 
@@ -94,7 +101,7 @@ export function CreditCardForm({ mode = 'funding', onSubmit, isLoading = false }
         <button
           onClick={() => {
             // Collect form data (in real implementation, get from form state)
-            const formData = {
+            const formData: CreditCardFormData = {
               cardNumber: '****-****-****-1234', // Mock data
               expiryDate: '12/25',
               cvv: '***',
