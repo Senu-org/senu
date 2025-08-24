@@ -1,0 +1,442 @@
+{
+	"info": {
+		"_postman_id": "senu-api-collection",
+		"name": "Senu API Collection",
+		"description": "Complete API collection for testing Senu wallet and transaction services",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "senu-api"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phoneNumber\": 1234567890\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user with phone number"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints"
+		},
+		{
+			"name": "Wallets",
+			"item": [
+				{
+					"name": "Create Wallet",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phoneNumber\": 1234567890\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/wallets/create",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"wallets",
+								"create"
+							]
+						},
+						"description": "Create a new wallet for a phone number"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Wallet Balance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/wallets/{{phoneNumber}}/balance",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"wallets",
+								"{{phoneNumber}}",
+								"balance"
+							]
+						},
+						"description": "Get wallet balance for a specific phone number"
+					},
+					"response": []
+				},
+				{
+					"name": "Transfer Funds",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fromPhone\": 1234567890,\n  \"toPhone\": 9876543210,\n  \"amount\": \"0.001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/wallets/transfer",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"wallets",
+								"transfer"
+							]
+						},
+						"description": "Transfer funds between wallets using phone numbers"
+					},
+					"response": []
+				}
+			],
+			"description": "Wallet management endpoints"
+		},
+		{
+			"name": "Transactions",
+			"item": [
+				{
+					"name": "Send Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"senderPhone\": 1234567890,\n  \"receiverPhone\": 9876543210,\n  \"amount\": \"0.001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/send",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"send"
+							]
+						},
+						"description": "Send a transaction between two phone numbers"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transaction Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/{{transactionId}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"{{transactionId}}",
+								"status"
+							]
+						},
+						"description": "Get the status of a specific transaction"
+					},
+					"response": []
+				},
+				{
+					"name": "Retry Transaction",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/{{transactionId}}/retry",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"{{transactionId}}",
+								"retry"
+							]
+						},
+						"description": "Retry a failed transaction"
+					},
+					"response": []
+				}
+			],
+			"description": "Transaction management endpoints"
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Send Push Notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"transaction\",\n  \"payload\": {\n    \"title\": \"Transaction Completed\",\n    \"body\": \"Your transaction of 0.001 MONAD has been confirmed\",\n    \"icon\": \"/icon-192x192.png\",\n    \"data\": {\n      \"url\": \"/transactions\",\n      \"transactionId\": \"0x123...\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/push",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"push"
+							]
+						},
+						"description": "Send a push notification to all subscribed users"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Test Notification",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/push",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"push"
+							]
+						},
+						"description": "Send a test push notification"
+					},
+					"response": []
+				},
+				{
+					"name": "Subscribe to Notifications",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"subscription\": {\n    \"endpoint\": \"https://fcm.googleapis.com/fcm/send/...\",\n    \"keys\": {\n      \"p256dh\": \"...\",\n      \"auth\": \"...\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/subscribe",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"subscribe"
+							]
+						},
+						"description": "Subscribe to push notifications"
+					},
+					"response": []
+				},
+				{
+					"name": "Unsubscribe from Notifications",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"endpoint\": \"https://fcm.googleapis.com/fcm/send/...\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/unsubscribe",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"unsubscribe"
+							]
+						},
+						"description": "Unsubscribe from push notifications"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Custom Notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Custom Notification\",\n  \"body\": \"This is a custom notification message\",\n  \"type\": \"general\",\n  \"data\": {\n    \"url\": \"/dashboard\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/send",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"send"
+							]
+						},
+						"description": "Send a custom notification"
+					},
+					"response": []
+				}
+			],
+			"description": "Notification management endpoints"
+		},
+		{
+			"name": "Bot",
+			"item": [
+				{
+					"name": "Bot Webhook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"update_id\": 123456789,\n  \"message\": {\n    \"message_id\": 1,\n    \"from\": {\n      \"id\": 123456789,\n      \"first_name\": \"John\",\n      \"username\": \"john_doe\"\n    },\n    \"chat\": {\n      \"id\": 123456789,\n      \"type\": \"private\"\n    },\n    \"date\": 1640995200,\n    \"text\": \"/start\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/bot/webhook",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bot",
+								"webhook"
+							]
+						},
+						"description": "Telegram bot webhook endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Bot Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/bot/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bot",
+								"status"
+							]
+						},
+						"description": "Get bot status information"
+					},
+					"response": []
+				}
+			],
+			"description": "Telegram bot endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "phoneNumber",
+			"value": "1234567890",
+			"type": "string"
+		},
+		{
+			"key": "transactionId",
+			"value": "0x1234567890abcdef",
+			"type": "string"
+		}
+	]
+}
