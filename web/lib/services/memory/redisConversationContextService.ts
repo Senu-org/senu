@@ -3,7 +3,7 @@ import { ConversationContext } from '../conversationStateMachine';
 interface RedisClient {
   get(key: string): Promise<string | null>;
   setex(key: string, ttl: number, value: string): Promise<void>;
-  del(key: string): Promise<void>;
+  del(...keys: string[]): Promise<void>;
   keys(pattern: string): Promise<string[]>;
 }
 
