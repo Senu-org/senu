@@ -1,6 +1,7 @@
 export enum ConversationState {
   Idle = 'idle',
   AwaitingAmount = 'awaiting_amount',
+  AwaitingRecipientPhone = 'awaiting_recipient_phone',
   ConfirmingTransaction = 'confirming_transaction',
   AwaitingRegistrationName = 'awaiting_registration_name',
   AwaitingRegistrationCountry = 'awaiting_registration_country',
@@ -13,7 +14,9 @@ export interface ConversationContext {
   state: ConversationState;
   phoneNumber: string;
   amount?: number;
-  recipient?: string; // e.g., recipient's phone number or identifier
+  recipientPhone?: string; // Recipient's phone number
+  recipientWalletAddress?: string; // Recipient's wallet address
+  recipient?: string; // e.g., recipient's phone number or identifier (legacy)
   name?: string;
   country?: string;
   lastActivity?: number; // Timestamp for session management
@@ -24,13 +27,18 @@ export class ConversationStateMachine {
     switch (currentState) {
       case ConversationState.Idle:
         if (intent === '/send') {
-          return ConversationState.AwaitingAmount;
+          return ConversationState.AwaitingRecipientPhone;
         } else if (intent === '/register') {
           return ConversationState.AwaitingRegistrationName;
         } else if (intent === '/menu') {
           return ConversationState.ShowingMenu;
         }
         return ConversationState.Idle; // Stay idle for unknown intents
+      case ConversationState.AwaitingRecipientPhone:
+        if (intent === 'text_input') {
+          return ConversationState.AwaitingAmount;
+        }
+        return ConversationState.AwaitingRecipientPhone;
       case ConversationState.AwaitingAmount:
         // In a real scenario, we'd validate the amount here
         if (intent === 'amount_received') {

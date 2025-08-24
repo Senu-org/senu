@@ -1,5 +1,6 @@
 import { BotService } from './bot';
 import { ConversationState, ConversationContext } from '../conversationStateMachine';
+import { AuthService } from '../auth';
 
 export class TransactionHandler {
   private botService: BotService;
@@ -13,10 +14,44 @@ export class TransactionHandler {
     const amount = parseFloat(message);
     if (!isNaN(amount) && amount > 0) {
       context.amount = amount;
+      
+      // Step 2: Get recipient information via REST API
+      const recipientPhone = context.recipientPhone;
+      if (!recipientPhone) {
+        await this.botService.sendMessage(phoneNumber, "Error: No recipient phone number found. Please start over.");
+        context.state = ConversationState.Idle;
+        return context;
+      }
+
+      // Step 2.1 & 2.2: Check if recipient exists and get/create wallet
+      const recipientUser = await AuthService.getUserByPhone(recipientPhone);
+      
+      if (!recipientUser) {
+        // Step 2.1: Recipient doesn't exist, create wallet
+        await AuthService.createUser(recipientPhone);
+        await AuthService.createWallet(recipientPhone);
+        console.log(`Created new user and wallet for recipient: ${recipientPhone}`);
+      } else if (!recipientUser.wallet_address) {
+        // Step 2.1: User exists but no wallet, create wallet
+        await AuthService.createWallet(recipientPhone);
+        console.log(`Created wallet for existing user: ${recipientPhone}`);
+      }
+      // Step 2.2: User exists and has wallet, just get the address
+      const recipientWalletAddress = await AuthService.getUserWalletAddress(recipientPhone);
+      
+      if (!recipientWalletAddress) {
+        await this.botService.sendMessage(phoneNumber, "Error: Could not get recipient wallet address. Please try again.");
+        context.state = ConversationState.Idle;
+        return context;
+      }
+
+      // Store recipient info in context
+      context.recipientWalletAddress = recipientWalletAddress;
+      
       // For now, let's assume a fixed fee or calculate it here
       const fee = amount * 0.01; // 1% fee
       const totalToSend = amount + fee;
-      const confirmMessage = `You want to send $${amount}. A fee of $${fee.toFixed(2)} will be applied. Total: $${totalToSend.toFixed(2)}.`;
+      const confirmMessage = `You want to send $${amount} to ${recipientPhone}. A fee of $${fee.toFixed(2)} will be applied. Total: $${totalToSend.toFixed(2)}.`;
       const confirmOptions = ['Confirm Transaction', 'Cancel Transaction'];
       await this.botService.sendMessageWithButtons(phoneNumber, confirmMessage, confirmOptions);
       context.state = ConversationState.ConfirmingTransaction;
@@ -31,13 +66,19 @@ export class TransactionHandler {
   async handleTransactionConfirmation(phoneNumber: string, intent: string, context: ConversationContext) {
     if (intent === 'menu_selection_1') {
       // User confirmed the transaction
-      if (!context.amount) {
-        await this.botService.sendMessage(phoneNumber, "Error: No amount found in context. Please start over.");
+      if (!context.amount || !context.recipientPhone || !context.recipientWalletAddress) {
+        await this.botService.sendMessage(phoneNumber, "Error: Missing transaction details. Please start over.");
         context.state = ConversationState.Idle;
         return { context, shouldDeleteContext: true };
       }
-      const miniAppLink = `https://miniapp.example.com/payment?amount=${context.amount}&from=${phoneNumber}`;
-      await this.botService.sendMessage(phoneNumber, `Please complete your payment using this link: ${miniAppLink}`);
+      
+      // Step 2.3: Send link to the user to the mini app on the funding page
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const fundingLink = `${baseUrl}/funding?amount=${context.amount}&recipient=${context.recipientPhone}&recipientWallet=${context.recipientWalletAddress}&sender=${phoneNumber}`;
+      
+      await this.botService.sendMessage(phoneNumber, `Please complete your payment using this link: ${fundingLink}`);
+      await this.botService.sendMessage(phoneNumber, "Once you complete the payment, the recipient will receive the funds automatically.");
+      
       // Reset context after sending the link for payment
       context.state = ConversationState.Idle;
       return { context, shouldDeleteContext: true };
@@ -62,6 +103,27 @@ export class TransactionHandler {
 
   // Handle send money menu selection
   async handleSendMoneySelection(phoneNumber: string, context: ConversationContext) {
+    await this.botService.sendMessage(phoneNumber, "Please enter the recipient's phone number:");
+    context.state = ConversationState.AwaitingRecipientPhone;
+    return context;
+  }
+
+  // Handle recipient phone input
+  async handleRecipientPhoneInput(phoneNumber: string, message: string, context: ConversationContext) {
+    // Clean the phone number
+    const cleanRecipientPhone = message.replace(/[^0-9]/g, "");
+    
+    if (cleanRecipientPhone.length < 8) {
+      await this.botService.sendMessage(phoneNumber, "Please enter a valid phone number.");
+      return context;
+    }
+    
+    if (cleanRecipientPhone === phoneNumber) {
+      await this.botService.sendMessage(phoneNumber, "You cannot send money to yourself. Please enter a different phone number.");
+      return context;
+    }
+    
+    context.recipientPhone = cleanRecipientPhone;
     await this.botService.sendMessage(phoneNumber, "How much would you like to send?");
     context.state = ConversationState.AwaitingAmount;
     return context;

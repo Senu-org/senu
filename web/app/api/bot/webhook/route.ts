@@ -41,8 +41,7 @@ export async function POST(request: NextRequest) {
 
     let context = await conversationHandler.getContext(cleanFrom);
     
-    // Check if user is already registered
-    const isRegistered = await AuthService.isUserRegistered(cleanFrom);
+    // Step 1: Get user data via REST API
     const existingUser = await AuthService.getUserByPhone(cleanFrom);
     
     // Check if context has timed out (30 minutes)
@@ -52,7 +51,39 @@ export async function POST(request: NextRequest) {
     }
     
     if (!context) {
-      await conversationHandler.initializeContext(cleanFrom, isRegistered, existingUser);
+      // Step 1.1, 1.2, 1.3: Handle user registration flow
+      if (!existingUser) {
+        // Step 1.2: User doesn't exist, create new one and ask for name/country
+        await AuthService.createUser(cleanFrom);
+        await conversationHandler.sendMessage(cleanFrom, "Welcome to the Remittance Bot! What is your name?");
+        await conversationHandler.initializeContext(cleanFrom, false, null);
+        context = await conversationHandler.getContext(cleanFrom);
+        context!.state = ConversationState.AwaitingRegistrationName;
+      } else if (!existingUser.name || !existingUser.country) {
+        // Step 1.1: User exists but missing name or country
+        if (!existingUser.name) {
+          await conversationHandler.sendMessage(cleanFrom, "Please tell me your name.");
+          await conversationHandler.initializeContext(cleanFrom, false, existingUser);
+          context = await conversationHandler.getContext(cleanFrom);
+          context!.state = ConversationState.AwaitingRegistrationName;
+        } else if (!existingUser.country) {
+          await conversationHandler.sendMessage(cleanFrom, "Please select your country:");
+          await conversationHandler.sendCountrySelectionMessage(cleanFrom);
+          await conversationHandler.initializeContext(cleanFrom, false, existingUser);
+          context = await conversationHandler.getContext(cleanFrom);
+          context!.state = ConversationState.AwaitingCountrySelection;
+        }
+      } else {
+        // Step 1.3: User exists and has all data, continue to menu
+        await conversationHandler.initializeContext(cleanFrom, true, existingUser);
+        await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser.name);
+        context = await conversationHandler.getContext(cleanFrom);
+        context!.state = ConversationState.ShowingMenu;
+      }
+      
+      if (context) {
+        await conversationHandler.saveContext(context);
+      }
       return NextResponse.json({ success: true });
     }
 
@@ -63,15 +94,25 @@ export async function POST(request: NextRequest) {
     
     // Handle /start command - reset context and show menu for existing users
     if (intent === '/start') {
-      await conversationHandler.handleStartCommand(cleanFrom, isRegistered, existingUser);
+      if (existingUser && existingUser.name && existingUser.country) {
+        await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser.name);
+        context.state = ConversationState.ShowingMenu;
+      } else {
+        await conversationHandler.sendMessage(cleanFrom, "Welcome to the Remittance Bot! What is your name?");
+        context.state = ConversationState.AwaitingRegistrationName;
+      }
+      await conversationHandler.saveContext(context);
       return NextResponse.json({ success: true });
     }
     
-    // Handle amount input before state transition
-    let handledAmountInput = false;
-    if (context.state === ConversationState.AwaitingAmount && (intent === 'amount_received' || intent === 'text_input')) {
+    // Handle input before state transition
+    let handledInput = false;
+    if (context.state === ConversationState.AwaitingRecipientPhone && intent === 'text_input') {
+      context = await transactionHandler.handleRecipientPhoneInput(cleanFrom, message, context);
+      handledInput = true;
+    } else if (context.state === ConversationState.AwaitingAmount && (intent === 'amount_received' || intent === 'text_input')) {
       context = await transactionHandler.handleAmountInput(cleanFrom, message, context);
-      handledAmountInput = true;
+      handledInput = true;
     } else {
       const newState = conversationStateMachine.transition(context.state, intent);
       context.state = newState;
@@ -92,32 +133,26 @@ export async function POST(request: NextRequest) {
         break;
       case ConversationState.AwaitingCountryConfirmation:
         if (intent === 'menu_selection_1' || intent === 'yes' || intent === 'confirm') {
-                  // User confirmed the detected country
-        try {
-          await AuthService.register(cleanFrom, context.name!, context.country!);
-          
-          // Create wallet by calling the create endpoint
-          const createWalletResponse = await fetch(`${request.nextUrl.origin}/api/wallets/create`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ phoneNumber: parseInt(cleanFrom) }),
-          });
-          
-          if (createWalletResponse.ok) {
+          // User confirmed the detected country
+          try {
+            // Update user with name and country via REST API
+            await AuthService.updateUser(cleanFrom, { 
+              name: context.name!, 
+              country: context.country! as "CR" | "NI" 
+            });
+            
+            // Create wallet via REST API
+            await AuthService.createWallet(cleanFrom);
+            
             await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered and your wallet has been created.`);
-          } else {
+            await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
+            context.state = ConversationState.ShowingMenu;
+          } catch (error) {
+            console.error('Registration error:', error);
             await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered.`);
+            await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
+            context.state = ConversationState.ShowingMenu;
           }
-          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
-          context.state = ConversationState.ShowingMenu;
-        } catch (error) {
-          console.error('Registration error:', error);
-          await conversationHandler.sendMessage(cleanFrom, `Perfect! You are now registered.`);
-          await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
-          context.state = ConversationState.ShowingMenu;
-        }
         } else if (intent === 'menu_selection_2' || intent === 'no' || intent === 'change') {
           // User wants to change the country
           await conversationHandler.sendCountrySelectionMessage(cleanFrom);
@@ -147,24 +182,17 @@ export async function POST(request: NextRequest) {
           break;
         }
         
-        // Register user with selected country
+        // Register user with selected country via REST API
         try {
-          await AuthService.register(cleanFrom, context.name!, context.country!);
-          
-          // Create wallet by calling the create endpoint
-          const createWalletResponse = await fetch(`${request.nextUrl.origin}/api/wallets/create`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ phoneNumber: parseInt(cleanFrom) }),
+          await AuthService.updateUser(cleanFrom, { 
+            name: context.name!, 
+            country: context.country! as "CR" | "NI" 
           });
           
-          if (createWalletResponse.ok) {
-            await conversationHandler.sendMessage(cleanFrom, `Great! You are now registered with ${context.country} and your wallet has been created.`);
-          } else {
-            await conversationHandler.sendMessage(cleanFrom, `Great! You are now registered with ${context.country}.`);
-          }
+          // Create wallet via REST API
+          await AuthService.createWallet(cleanFrom);
+          
+          await conversationHandler.sendMessage(cleanFrom, `Great! You are now registered with ${context.country} and your wallet has been created.`);
           await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, context.name);
           context.state = ConversationState.ShowingMenu;
         } catch (error) {
@@ -199,8 +227,8 @@ export async function POST(request: NextRequest) {
         break;
 
       case ConversationState.ConfirmingTransaction:
-        // Only handle transaction confirmation if we didn't just handle amount input
-        if (!handledAmountInput) {
+        // Only handle transaction confirmation if we didn't just handle input
+        if (!handledInput) {
           const result = await transactionHandler.handleTransactionConfirmation(cleanFrom, intent, context);
           context = result.context;
           if (result.shouldDeleteContext) {
@@ -210,7 +238,7 @@ export async function POST(request: NextRequest) {
         break;
       case ConversationState.Idle:
         if (intent === '/start') {
-          if (isRegistered && existingUser) {
+          if (existingUser && existingUser.name && existingUser.country) {
             await conversationHandler.sendWelcomeMessageWithMenu(cleanFrom, existingUser.name);
             context.state = ConversationState.ShowingMenu;
           } else {
@@ -218,8 +246,8 @@ export async function POST(request: NextRequest) {
             context.state = ConversationState.AwaitingRegistrationName;
           }
         } else if (intent === '/send') {
-          await conversationHandler.sendMessage(cleanFrom, "How much would you like to send?");
-          context.state = ConversationState.AwaitingAmount;
+          await conversationHandler.sendMessage(cleanFrom, "Please enter the recipient's phone number:");
+          context.state = ConversationState.AwaitingRecipientPhone;
         } else if (intent === '/status') {
           await notificationHandler.handleTransactionStatus(cleanFrom);
         } else if (intent === '/balance') {
