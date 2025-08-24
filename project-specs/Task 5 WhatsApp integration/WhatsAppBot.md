@@ -38,6 +38,217 @@ Based on the codebase analysis, the following endpoints are available for integr
 - **GET** `/api/transactions/[id]/status` - Get transaction status
 - **POST** `/api/transactions/[id]/retry` - Retry failed transaction
 
+## **Data Flow: Send Money Process**
+
+### **Complete Money Sending Flow**
+
+The WhatsApp bot acts as a data collection interface that redirects users to the Mini App for actual transaction processing. Here's the complete flow:
+
+#### **Step 1: User Initiates Send Money**
+- User sends "Send Money" or selects from menu
+- Bot responds with recipient phone number request
+- **State**: `awaiting_recipient`
+
+#### **Step 2: Recipient Phone Number Collection**
+- User provides recipient's WhatsApp number (e.g., "+1234567890")
+- Bot validates phone number format
+- Bot stores recipient in conversation context
+- Bot requests amount to send
+- **State**: `awaiting_amount`
+
+#### **Step 3: Amount Collection**
+- User provides amount (e.g., "$100" or "100")
+- Bot validates amount format and minimum/maximum limits
+- Bot stores amount in conversation context
+- Bot shows transaction summary for confirmation
+- **State**: `confirming_transaction`
+
+#### **Step 4: Transaction Confirmation**
+- Bot displays: "Send $100 to +1234567890?"
+- User confirms with "Yes" or "Confirm"
+- Bot generates Mini App URL with transaction data
+- **State**: `redirecting_to_app`
+
+#### **Step 5: Mini App Redirect**
+- Bot sends message with clickable link to Mini App
+- URL format: `https://senu.app/send?amount=100&recipient=1234567890&sender=9876543210`
+- URL parameters include:
+  - `amount`: Transaction amount
+  - `recipient`: Recipient's phone number
+  - `sender`: Sender's phone number
+  - `timestamp`: Transaction timestamp
+  - `session_id`: Unique session identifier
+
+#### **Step 6: Mini App Processing**
+- User clicks link and opens Mini App
+- Mini App receives URL parameters
+- Mini App handles actual payment processing
+- Mini App manages wallet operations and blockchain transactions
+- Mini App shows transaction progress and confirmation
+
+#### **Step 7: Transaction Notification**
+- After Mini App completes transaction
+- Mini App calls notification service
+- Bot receives transaction status update
+- Bot sends confirmation message to user
+- **State**: `transaction_completed`
+
+### **URL Parameter Structure**
+
+```typescript
+interface TransactionURLParams {
+  amount: string;           // Transaction amount (e.g., "100")
+  recipient: string;        // Recipient phone number (e.g., "1234567890")
+  sender: string;          // Sender phone number (e.g., "9876543210")
+  timestamp: string;       // ISO timestamp
+  session_id: string;      // Unique session identifier
+  currency?: string;       // Optional currency code (default: USD)
+  fee?: string;           // Optional fee amount
+}
+```
+
+### **Example Conversation Flow**
+
+```
+User: "Send Money"
+Bot: "Please provide the recipient's WhatsApp number:"
+
+User: "+1234567890"
+Bot: "How much would you like to send?"
+
+User: "$100"
+Bot: "Send $100 to +1234567890? Reply 'Yes' to confirm."
+
+User: "Yes"
+Bot: "Perfect! Click here to complete your transaction: 
+     https://senu.app/send?amount=100&recipient=1234567890&sender=9876543210&timestamp=2024-01-15T10:30:00Z&session_id=abc123"
+
+[User clicks link and completes transaction in Mini App]
+
+Bot: "✅ Transaction completed! $100 has been sent to +1234567890. 
+     Transaction ID: TXN-2024-001"
+```
+
+### **Error Handling in Flow**
+
+- **Invalid phone number**: Bot requests re-entry with format example
+- **Invalid amount**: Bot shows minimum/maximum limits and requests re-entry
+- **User cancellation**: Bot returns to main menu
+- **Mini App errors**: Bot provides support contact information
+- **Network issues**: Bot offers retry option
+
+### **Context Management**
+
+The bot maintains conversation context in Redis/Supabase with:
+```typescript
+interface ConversationContext {
+  phone_number: string;
+  state: string;
+  amount?: number;
+  recipient?: string;
+  session_id?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+```
+
+## **Phone Number Validation and User Information**
+
+### **WhatsApp API Limitations**
+
+**✅ Available: Phone Number Validation**
+- WhatsApp Cloud API provides Contacts API to validate phone numbers
+- Can check if a phone number has an active WhatsApp account
+- Returns `wa_id` (WhatsApp ID) and validation status
+
+**❌ NOT Available: User Profile Information**
+- Cannot retrieve user's display name/profile name
+- Cannot access user's profile picture or status
+- Cannot get any personal information beyond phone number
+- This is intentional privacy protection by WhatsApp
+
+### **Phone Number Validation Flow**
+
+#### **API Endpoint for Validation**
+```typescript
+// POST /v1/contacts (WhatsApp Cloud API)
+{
+  "blocking": "wait",
+  "contacts": ["+1234567890"],
+  "force_check": false
+}
+
+// Response
+{
+  "contacts": [
+    {
+      "wa_id": "1234567890",
+      "input": "+1234567890",
+      "status": "valid"
+    }
+  ]
+}
+```
+
+#### **Updated Bot Flow with Validation**
+```typescript
+// Step 2: Recipient Phone Number Collection (Updated)
+User: "+1234567890"
+Bot: "Validating phone number..."
+
+// 1. Validate with WhatsApp API
+const validationResult = await validateWhatsAppNumber(phoneNumber);
+
+if (validationResult.status === 'valid') {
+  // 2. Check if recipient is registered in our system
+  const recipientInfo = await getUserByPhone(validationResult.wa_id);
+  
+  if (recipientInfo) {
+    Bot: `Found registered user: ${recipientInfo.name}. How much would you like to send?`
+  } else {
+    Bot: `Phone number validated. Recipient is not registered in our system. How much would you like to send?`
+  }
+  
+  // Store validated phone number in context
+  context.recipient = validationResult.wa_id;
+  context.recipient_name = recipientInfo?.name || "Unknown User";
+  
+} else {
+  Bot: "Invalid phone number. Please provide a valid WhatsApp number."
+  // Stay in awaiting_recipient state
+}
+```
+
+### **User Information Management**
+
+Since WhatsApp doesn't provide user names, we need to:
+
+1. **Store User Information During Registration**
+```typescript
+interface UserProfile {
+  phone_number: string;
+  wa_id: string;          // WhatsApp ID from validation
+  name: string;           // Collected during registration
+  country: string;        // Collected during registration
+  created_at: Date;
+  updated_at: Date;
+}
+```
+
+2. **Recipient Information Display**
+```typescript
+// When showing transaction confirmation
+const recipientDisplay = recipientInfo?.name || `+${context.recipient}`;
+Bot: `Send $${context.amount} to ${recipientDisplay}? Reply 'Yes' to confirm.`
+```
+
+### **Error Handling for Phone Validation**
+
+- **Invalid number format**: Request re-entry with format example
+- **Non-WhatsApp number**: Inform user number must have WhatsApp
+- **API errors**: Provide fallback validation or retry option
+- **Rate limiting**: Implement delays between validation requests
+
 ### Child Tasks
 
 #### 5.1 Configure Twilio WhatsApp API Integration ✅ **COMPLETED**
@@ -167,7 +378,37 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
   - Future-ready structure for easy feature additions
   - Cleaner architecture following best practices
 
-#### 5.5 **PENDING** - Implement Wallet Creation for New Users
+#### 5.5 **PENDING** - Implement Phone Number Validation System
+- **Description:** Add WhatsApp phone number validation to the bot flow
+- **Tasks:**
+  - [ ] Create WhatsApp Contacts API integration
+    - [ ] Implement `validateWhatsAppNumber(phoneNumber)` function
+    - [ ] Add error handling for API rate limits and failures
+    - [ ] Add retry mechanism for failed validations
+    - [ ] Cache validation results to avoid repeated API calls
+  - [ ] Update conversation context schema
+    - [ ] Add `recipient_wa_id` field for validated WhatsApp ID
+    - [ ] Add `recipient_name` field for display purposes
+    - [ ] Add `validation_status` field to track validation state
+  - [ ] Update transaction flow in WhatsApp bot
+    - [ ] Add validation step after user provides recipient phone number
+    - [ ] Show validation progress message to user
+    - [ ] Handle invalid phone numbers gracefully
+    - [ ] Check if recipient is registered in our system
+    - [ ] Display appropriate messages based on validation results
+  - [ ] Create user profile management system
+    - [ ] Create `users` table in Supabase for storing user information
+    - [ ] Implement `getUserByPhone(wa_id)` function
+    - [ ] Add user registration data collection during bot registration
+    - [ ] Store user name and country during registration flow
+  - [ ] Add environment variables for WhatsApp API
+    ```
+    WHATSAPP_ACCESS_TOKEN="your_whatsapp_access_token"
+    WHATSAPP_PHONE_NUMBER_ID="your_phone_number_id"
+    WHATSAPP_BUSINESS_ACCOUNT_ID="your_business_account_id"
+    ```
+
+#### 5.6 **PENDING** - Implement Wallet Creation for New Users
 - **Description:** Complete the wallet creation functionality for new users during registration
 - **Tasks:**
   - [ ] Complete SupabaseRepository implementation for wallet storage
@@ -194,6 +435,21 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
     
     CREATE INDEX idx_wallets_phone_number ON wallets(phone_number);
     ```
+  - [ ] Create Supabase table schema for users
+    ```sql
+    CREATE TABLE users (
+        id TEXT PRIMARY KEY,
+        phone_number TEXT NOT NULL UNIQUE,
+        wa_id TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        country TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+    
+    CREATE INDEX idx_users_phone_number ON users(phone_number);
+    CREATE INDEX idx_users_wa_id ON users(wa_id);
+    ```
   - [ ] Update WhatsApp bot registration flow
     - [ ] Call wallet creation after successful user registration
     - [ ] Handle wallet creation errors gracefully
@@ -206,7 +462,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
     SUPABASE_SERVICE_ROLE_KEY="your_supabase_service_role_key"
     ```
 
-#### 5.6 **PENDING** - Integrate Wallet Balance Endpoint
+#### 5.7 **PENDING** - Integrate Wallet Balance Endpoint
 - **Description:** Connect the balance checking functionality to the actual wallet service
 - **Tasks:**
   - [ ] Implement `GET /api/wallets/[phone]/balance` endpoint logic
@@ -215,7 +471,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
   - [ ] Add proper error handling for balance retrieval
   - [ ] Format balance response for WhatsApp display
 
-#### 5.7 **PENDING** - Integrate Transaction Status Endpoint
+#### 5.8 **PENDING** - Integrate Transaction Status Endpoint
 - **Description:** Connect transaction status checking to the actual transaction service
 - **Tasks:**
   - [ ] Implement `GET /api/transactions/[id]/status` endpoint logic
@@ -224,7 +480,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
   - [ ] Add transaction history tracking in conversation context
   - [ ] Format status response for WhatsApp display
 
-#### 5.8 **PENDING** - Implement Transaction Retry Functionality
+#### 5.9 **PENDING** - Implement Transaction Retry Functionality
 - **Description:** Add ability to retry failed transactions
 - **Tasks:**
   - [ ] Implement `POST /api/transactions/[id]/retry` endpoint logic
@@ -235,7 +491,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
 
 ### **Phase 2: Enhanced Transaction Processing**
 
-#### 5.9 **PENDING** - Implement Wallet Transfer Endpoint
+#### 5.10 **PENDING** - Implement Wallet Transfer Endpoint
 - **Description:** Connect wallet transfer functionality for internal transfers
 - **Tasks:**
   - [ ] Implement `POST /api/wallets/transfer` endpoint logic
@@ -244,7 +500,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
   - [ ] Validate recipient phone number format and existence
   - [ ] Add transfer confirmation flow
 
-#### 5.10 **PENDING** - Enhance Transaction Send Endpoint
+#### 5.11 **PENDING** - Enhance Transaction Send Endpoint
 - **Description:** Complete the transaction sending functionality
 - **Tasks:**
   - [ ] Implement `POST /api/transactions/send` endpoint logic
@@ -253,7 +509,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
   - [ ] Integrate with payment processing system
   - [ ] Add transaction confirmation and receipt generation
 
-#### 5.11 **PENDING** - Implement Notification System
+#### 5.12 **PENDING** - Implement Notification System
 - **Description:** Connect notification sending to the actual notification service
 - **Tasks:**
   - [ ] Implement `POST /api/notifications/send` endpoint logic
@@ -264,7 +520,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
 
 ### **Phase 3: Advanced Features and Error Handling**
 
-#### 5.12 **PENDING** - Enhanced Error Handling and Recovery
+#### 5.13 **PENDING** - Enhanced Error Handling and Recovery
 - **Description:** Improve error handling and add recovery mechanisms
 - **Tasks:**
   - [ ] Add comprehensive error handling for all API calls
@@ -273,7 +529,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
   - [ ] Create fallback flows for service outages
   - [ ] Add logging and monitoring for debugging
 
-#### 5.13 **PENDING** - Multi-language Support
+#### 5.14 **PENDING** - Multi-language Support
 - **Description:** Add support for multiple languages (Spanish/English)
 - **Tasks:**
   - [ ] Create language detection based on user input
@@ -282,7 +538,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
   - [ ] Update all bot messages to support multiple languages
   - [ ] Add language switching functionality
 
-#### 5.14 **PENDING** - Advanced Conversation Features
+#### 5.15 **PENDING** - Advanced Conversation Features
 - **Description:** Add advanced conversation management features
 - **Tasks:**
   - [ ] Add conversation timeout handling and cleanup
@@ -293,7 +549,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
 
 ### **Phase 4: Integration and Testing**
 
-#### 5.15 **PENDING** - End-to-End Integration Testing
+#### 5.16 **PENDING** - End-to-End Integration Testing
 - **Description:** Test complete flows from registration to transaction completion
 - **Tasks:**
   - [ ] Create comprehensive test suite for all conversation flows
@@ -302,7 +558,7 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
   - [ ] Test performance under load
   - [ ] Test security and authentication flows
 
-#### 5.16 **PENDING** - Production Deployment Preparation
+#### 5.17 **PENDING** - Production Deployment Preparation
 - **Description:** Prepare the WhatsApp bot for production deployment
 - **Tasks:**
   - [ ] Add environment-specific configurations
@@ -313,10 +569,10 @@ CREATE POLICY "Users can view and update their own conversation context." ON wha
 
 ## **Priority Order for Implementation**
 
-1. **High Priority (Phase 1)**: 5.4, 5.5, 5.6, 5.7, 5.8
-2. **Medium Priority (Phase 2)**: 5.9, 5.10, 5.11
-3. **Low Priority (Phase 3)**: 5.12, 5.13, 5.14
-4. **Final Phase (Phase 4)**: 5.15, 5.16
+1. **High Priority (Phase 1)**: 5.4, 5.5, 5.6, 5.7, 5.8, 5.9
+2. **Medium Priority (Phase 2)**: 5.10, 5.11, 5.12
+3. **Low Priority (Phase 3)**: 5.13, 5.14, 5.15
+4. **Final Phase (Phase 4)**: 5.16, 5.17
 
 ## **Success Metrics**
 
