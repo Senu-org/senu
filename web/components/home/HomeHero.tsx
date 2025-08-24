@@ -38,7 +38,7 @@ export function HomeHero() {
           {/* Card header */}
           <div className="px-6 py-4 border-b border-gray-100">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-500 rounded-2xl flex items-center justify-center shadow-sm">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-sm">
                 <span className="text-white font-bold text-lg">$</span>
               </div>
               <div>
@@ -54,9 +54,9 @@ export function HomeHero() {
             <div className="text-base text-gray-600 mb-4">Costa Rica → Nicaragua</div>
             
             {/* iOS-style status indicator */}
-            <div className="inline-flex items-center px-3 py-1 bg-green-100 rounded-full">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-              <span className="text-sm font-medium text-green-700">Procesando...</span>
+            <div className="inline-flex items-center px-3 py-1 bg-purple-100 rounded-full">
+              <div className="w-2 h-2 bg-purple-500 rounded-full mr-2 animate-pulse"></div>
+              <span className="text-sm font-medium text-purple-700">Procesando...</span>
             </div>
           </div>
           
@@ -73,7 +73,7 @@ export function HomeHero() {
       <div className="relative px-4 mt-6">
         <div className="flex justify-center space-x-4">
           <div className="flex items-center space-x-2 px-3 py-2 bg-white rounded-full shadow-md">
-            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+            <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
               <span className="text-white text-xs font-bold">$</span>
             </div>
             <span className="text-sm font-medium text-gray-700">USD</span>

@@ -49,7 +49,7 @@ export function CreditCardForm({ mode = 'funding', onSubmit, isLoading = false }
             type="text"
             inputMode="numeric"
             placeholder="1234 5678 9012 3456"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
           />
         </div>
         
@@ -62,7 +62,7 @@ export function CreditCardForm({ mode = 'funding', onSubmit, isLoading = false }
               type="text"
               inputMode="numeric"
               placeholder="MM/AA"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
             />
           </div>
           <div>
@@ -73,7 +73,7 @@ export function CreditCardForm({ mode = 'funding', onSubmit, isLoading = false }
               type="text"
               inputMode="numeric"
               placeholder="123"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
             />
           </div>
         </div>
@@ -85,7 +85,7 @@ export function CreditCardForm({ mode = 'funding', onSubmit, isLoading = false }
           <input
             type="text"
             placeholder="Juan Pérez"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
           />
         </div>
       </div>
@@ -108,7 +108,7 @@ export function CreditCardForm({ mode = 'funding', onSubmit, isLoading = false }
                   w-full py-4 text-white font-semibold rounded-2xl shadow-sm transition-all duration-150 text-base
                   ${isLoading
                     ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-blue-500 active:bg-blue-600 active:shadow-md transform active:scale-95'
+                    : 'bg-purple-500 active:bg-purple-600 active:shadow-md transform active:scale-95'
                   }
                 `}
               >
@@ -128,7 +128,7 @@ export function CreditCardForm({ mode = 'funding', onSubmit, isLoading = false }
 
       {/* iOS-style security notice */}
       <div className="flex items-center justify-center space-x-2 pt-2">
-        <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+        <svg className="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
         </svg>
         <span className="text-xs text-gray-600">Datos protegidos con encriptación SSL</span>

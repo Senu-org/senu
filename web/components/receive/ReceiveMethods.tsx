@@ -100,7 +100,7 @@ Tipo: Cuenta Corriente Colones
           `.trim();
           navigator.clipboard.writeText(bankInfo);
         }}
-        className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center space-x-2"
+        className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center space-x-2"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -150,13 +150,13 @@ Tipo: Cuenta Corriente Colones
                     ? 'cursor-pointer active:bg-gray-100' 
                     : 'cursor-not-allowed opacity-60'
                   }
-                  ${safeExpandedMethod === method.id ? 'bg-green-50' : 'hover:bg-gray-50'}
+                  ${safeExpandedMethod === method.id ? 'bg-purple-50' : 'hover:bg-gray-50'}
                 `}
               >
                 {/* Icon */}
                 <div className={`
                   flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center mr-4 transition-colors
-                  ${safeExpandedMethod === method.id ? 'bg-green-100' : 'bg-gray-100'}
+                  ${safeExpandedMethod === method.id ? 'bg-purple-100' : 'bg-gray-100'}
                 `}>
                   <span className="text-xl">{method.icon}</span>
                 </div>
@@ -165,7 +165,7 @@ Tipo: Cuenta Corriente Colones
                 <div className="flex-1 min-w-0">
                   <h3 className={`
                     text-base font-semibold truncate
-                    ${safeExpandedMethod === method.id ? 'text-green-900' : 'text-gray-900'}
+                    ${safeExpandedMethod === method.id ? 'text-purple-900' : 'text-gray-900'}
                   `}>
                     {method.name}
                   </h3>
@@ -209,13 +209,13 @@ Tipo: Cuenta Corriente Colones
           ))}
         </div>
 
-        {/* iOS-style Security Footer */}
+
         <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
           <div className="flex items-center justify-center space-x-2">
-            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
             </svg>
-            <span className="text-xs font-medium text-gray-600">Protegido con SSL</span>
+
           </div>
         </div>
       </div>

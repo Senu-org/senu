@@ -1,5 +1,6 @@
 import { FundingHero } from './FundingHero';
 import { FundingMethods } from './FundingMethods';
+import { AppHeader } from '../shared';
 
 interface FundingProps {
   phoneNumber?: string | null;
@@ -8,8 +9,7 @@ interface FundingProps {
 export function Funding({ phoneNumber }: FundingProps) {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* iOS-style status bar area */}
-      <div className="h-11 bg-white"></div>
+      <AppHeader />
       
       <main className="relative">
         {/* iOS-style background */}

@@ -1,12 +1,12 @@
 import { HomeHero } from './HomeHero';
 import { HomeFeatures } from './HomeFeatures';
 import { HomeFooter } from './HomeFooter';
+import { AppHeader } from '../shared';
 
 export function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* iOS-style status bar area */}
-      <div className="h-11 bg-white"></div>
+      <AppHeader />
       
       <main className="relative">
         {/* iOS-style background with subtle texture */}

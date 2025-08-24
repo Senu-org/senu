@@ -1,5 +1,6 @@
 import { ReceiveHero } from './ReceiveHero';
 import { ReceiveMethods } from './ReceiveMethods';
+import { AppHeader } from '../shared';
 
 interface ReceiveMoneyProps {
   phoneNumber?: string | null;
@@ -8,8 +9,7 @@ interface ReceiveMoneyProps {
 export function ReceiveMoney({ phoneNumber }: ReceiveMoneyProps) {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* iOS-style status bar area */}
-      <div className="h-11 bg-white"></div>
+      <AppHeader />
       
       <main className="relative">
         {/* iOS-style background */}

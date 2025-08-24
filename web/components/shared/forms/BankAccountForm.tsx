@@ -18,8 +18,8 @@ export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormP
     : 'Guardar Cuenta Bancaria';
   
   const buttonColor = isFunding 
-    ? 'bg-green-500 hover:bg-green-600' 
-    : 'bg-blue-500 hover:bg-blue-600';
+    ? 'bg-purple-500 hover:bg-purple-600' 
+    : 'bg-purple-500 hover:bg-purple-600';
 
   return (
     <div className="p-4 bg-white space-y-4">
@@ -41,7 +41,7 @@ export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormP
             type="text"
             inputMode="numeric"
             placeholder="1234567890"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
           />
         </div>
         
@@ -49,7 +49,7 @@ export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormP
           <label className="block text-sm font-medium text-gray-900 mb-2">
             Banco
           </label>
-          <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base appearance-none">
+          <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base appearance-none">
             <option value="">Selecciona tu banco</option>
             <option value="bncr">Banco Nacional de Costa Rica</option>
             <option value="bcr">Banco de Costa Rica</option>
@@ -69,7 +69,7 @@ export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormP
               <input
                 type="text"
                 placeholder="Juan Pérez Rodríguez"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
               />
             </div>
             
@@ -81,7 +81,7 @@ export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormP
                 type="text"
                 inputMode="numeric"
                 placeholder="1-2345-6789"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
               />
             </div>
           </>
@@ -98,7 +98,7 @@ export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormP
                 type="number"
                 inputMode="decimal"
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
+                className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
               />
             </div>
           </div>
@@ -117,7 +117,7 @@ export function BankAccountForm({ mode = 'funding', onSubmit }: BankAccountFormP
 
       {/* iOS-style security notice */}
       <div className="flex items-center justify-center space-x-2 pt-2">
-        <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+        <svg className="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
         </svg>
         <span className="text-xs text-gray-600">Información protegida con SSL</span>
