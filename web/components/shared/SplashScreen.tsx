@@ -23,7 +23,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
   return (
     <div className={`
-      fixed inset-0 z-50 bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 
+      fixed inset-0 z-50 bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 
       flex items-center justify-center transition-opacity duration-300
       ${fadeOut ? 'opacity-0' : 'opacity-100'}
     `}>
