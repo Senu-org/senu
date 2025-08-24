@@ -23,11 +23,11 @@ export default function Error({
           </svg>
         </div>
         
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
           ¡Algo salió mal!
         </h2>
         
-        <p className="text-gray-600 dark:text-gray-300 mb-6">
+        <p className="text-gray-600 mb-6">
           Ha ocurrido un error inesperado. Por favor intenta nuevamente.
         </p>
         
@@ -36,23 +36,23 @@ export default function Error({
             onClick={reset}
             className="w-full px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors duration-200"
           >
-            Intentar nuevamente
+            Intentar Nuevamente
           </button>
           
           <a
             href="/"
-            className="block w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold rounded-lg transition-colors duration-200"
+            className="block w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold rounded-lg transition-colors duration-200"
           >
-            Volver al inicio
+            Volver al Inicio
           </a>
         </div>
         
         {process.env.NODE_ENV === 'development' && (
           <details className="mt-6 text-left">
-            <summary className="cursor-pointer text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+            <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
               Detalles del error (desarrollo)
             </summary>
-            <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-auto text-red-600 dark:text-red-400">
+            <pre className="mt-2 text-xs bg-gray-100 p-3 rounded overflow-auto text-red-600">
               {error.message}
             </pre>
           </details>
