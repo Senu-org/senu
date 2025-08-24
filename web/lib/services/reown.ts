@@ -56,11 +56,8 @@ class ReownService {
     if (!this.appKit) {
       try {
         this.appKit = await createAppKit({
-          projectId: reownConfig.projectId!,
-          clientId: reownConfig.clientId!,
-          chains: reownConfig.chains,
-          walletKit: reownConfig.walletKit,
-        });
+          ...reownConfig,
+        } as any);
       } catch (error) {
         console.error('Failed to initialize AppKit:', error);
         throw new Error('Failed to initialize wallet connection');
@@ -94,7 +91,7 @@ class ReownService {
         return {
           isConnected: true,
           address: connection.address,
-          chainId: this.walletState.chainId,
+          chainId: this.walletState.chainId || undefined,
           balance: this.walletState.balance,
         };
       } else {
